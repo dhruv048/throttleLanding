@@ -1,5 +1,6 @@
 /* Throttle landing: colours come from the app (lib/theme.dart) and the logo.
-   Dark is the default; [data-theme="light"] on <html> switches palettes.
+   Light is the default (index.html sets data-theme="light" on <html>; the
+   toggle switches to "dark"). The dark palette doubles as the base below.
    .keep-dark marks "app screen" visuals (live map, globe, floating badges)
    that stay dark in both themes. */
 :root,
@@ -237,12 +238,11 @@ svg { display: block; }
 .hero__inner { display: grid; grid-template-columns: 1.08fr 0.92fr; align-items: center; gap: 48px; }
 .hero__copy { position: relative; z-index: 2; min-width: 0; }
 .hero__title {
-  margin: 18px 0 18px;
+  margin: 18px 0 28px;
   font-family: var(--display); font-weight: 700; text-transform: uppercase;
   font-size: clamp(46px, 6.4vw, 92px); line-height: 0.94; letter-spacing: -0.005em;
 }
 .hero__title .slant { display: block; width: fit-content; }
-.hero__lede { max-width: 540px; margin: 0 0 24px; font-size: clamp(17px, 1.5vw, 19px); color: var(--text-2); }
 .hero__price {
   display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 14px;
   max-width: 100%; margin: 0 0 20px; padding: 10px 12px 10px 18px;
@@ -596,9 +596,8 @@ svg { display: block; }
   .nav__links { display: none; }
   .hero { padding-top: calc(92px + env(safe-area-inset-top)); padding-bottom: 56px; }
   .hero__inner { gap: 28px; }
-  .hero__title { margin: 16px 0 14px; font-size: clamp(42px, 12vw, 60px); }
+  .hero__title { margin: 16px 0 22px; font-size: clamp(42px, 12vw, 60px); }
   .hero__title .slant { transform-origin: center center; }
-  .hero__lede { font-size: 16px; margin-bottom: 20px; }
   .hero__price { margin-bottom: 16px; gap: 12px; padding: 8px 10px 8px 14px; }
   .hero__price-now { font-size: 36px; }
   .hero__price-was s { font-size: 19px; }

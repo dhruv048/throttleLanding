@@ -42,7 +42,7 @@
     themeBtn.setAttribute("aria-label", t === "light" ? "Switch to dark mode" : "Switch to light mode");
     themeMeta.setAttribute("content", t === "light" ? "#f7f5f1" : "#0d0d0f");
   };
-  applyTheme(root.getAttribute("data-theme") === "light" ? "light" : "dark");
+  applyTheme(root.getAttribute("data-theme") === "dark" ? "dark" : "light");
   themeBtn.addEventListener("click", () => {
     const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
     applyTheme(next);
