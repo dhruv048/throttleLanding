@@ -1,0 +1,5 @@
+# Only the static page goes to Vercel. The edge functions deploy to Supabase.
+supabase
+README.md
+.htaccess
+*.zip

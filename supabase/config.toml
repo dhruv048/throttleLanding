@@ -1,0 +1,13 @@
+# Edge functions for the landing page. They deploy to the SAME Supabase
+# project as the Flutter app (database schema lives in
+# ../wheelsclub/supabase/migrations).
+project_id = "throttle_landing"
+
+# The page calls this with the publishable key (not a JWT), and checks its
+# own input, so the gateway's JWT check is off.
+[functions.create-checkout]
+verify_jwt = false
+
+# Stripe signs its requests instead of sending a Supabase token.
+[functions.stripe-webhook]
+verify_jwt = false
