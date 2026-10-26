@@ -1,0 +1,494 @@
+<!doctype html>
+<!-- v2: solid nav + street map / live ride hero (assets/css/v2.css, assets/js/hero-route.js). -->
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Throttle: the ride tracker for motorcyclists</title>
+  <meta name="description" content="Throttle records every motorcycle ride with GPS, turns it into a ride card that flexes your top speed, and connects you with riders who get it. Pre-register for $1.99 (Pro will be $15.99 a year)." />
+  <meta name="theme-color" content="#f7f5f1" />
+  <script>
+    // Apply the saved theme before anything paints (light by default).
+    (function () {
+      var t = "light";
+      try { t = localStorage.getItem("throttle_theme") === "dark" ? "dark" : "light"; } catch (e) {}
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Throttle: Strava for Bikers" />
+  <meta property="og:description" content="The motorcycle app for tracking rides and sharing ride cards. Pre-register for $1.99. Pro will be $15.99 a year." />
+  <meta property="og:image" content="assets/img/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="preload" as="image" href="assets/img/cards/photo-bold.webp" type="image/webp" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=10" />
+  <link rel="stylesheet" href="assets/css/v2.css?v=6" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- ============================== NAV ============================== -->
+  <header class="nav" id="nav">
+    <div class="wrap nav__inner">
+      <a href="#top" class="nav__logo" aria-label="Throttle home">
+        <img class="logo-on-dark" src="assets/img/logo-light.png" alt="Throttle" width="640" height="114" />
+        <img class="logo-on-light" src="assets/img/logo-dark.png" alt="Throttle" width="640" height="114" />
+      </a>
+      <nav class="nav__links" aria-label="Sections">
+        <a href="#top">Home</a>
+        <a href="#features">Features</a>
+        <a href="#cards">Ride cards</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="nav__right">
+        <button type="button" class="iconbtn theme-toggle" id="themeToggle" aria-label="Switch to dark mode">
+          <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+        </button>
+        <a href="#enroll" class="btn btn--primary btn--sm" data-cta><span>Pre-register<span class="nav__price"> · <span data-price>$1.99</span></span></span></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ============================== HERO ============================== -->
+    <section class="hero hero--route" id="top">
+      <div class="hero__bg" aria-hidden="true">
+        <!-- Faint street map, fading out behind the headline -->
+        <svg class="hr-map" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+          <path class="hr-water" d="M1500 40 C 1260 120 1180 260 1220 420 S 1120 700 1300 980" />
+          <rect class="hr-park" x="760" y="120" width="170" height="110" rx="18" />
+          <rect class="hr-park" x="1150" y="560" width="140" height="180" rx="18" />
+          <rect class="hr-park" x="930" y="760" width="200" height="90" rx="18" />
+          <path class="hr-road" d="M-20 40 Q 720 30 1460 29" />
+          <path class="hr-road" d="M-20 132 Q 720 127 1460 115" />
+          <path class="hr-road" d="M-20 224 Q 720 198 1460 238" />
+          <path class="hr-road" d="M-20 316 Q 720 292 1460 319" />
+          <path class="hr-road" d="M-20 408 Q 720 415 1460 391" />
+          <path class="hr-road" d="M-20 500 Q 720 528 1460 512" />
+          <path class="hr-road" d="M-20 592 Q 720 575 1460 574" />
+          <path class="hr-road" d="M-20 684 Q 720 659 1460 691" />
+          <path class="hr-road" d="M-20 776 Q 720 772 1460 760" />
+          <path class="hr-road" d="M-20 868 Q 720 853 1460 853" />
+          <path class="hr-road" d="M30 -20 Q 60 450 27 920" />
+          <path class="hr-road" d="M134 -20 Q 101 450 156 920" />
+          <path class="hr-road" d="M238 -20 Q 270 450 215 920" />
+          <path class="hr-road" d="M342 -20 Q 330 450 352 920" />
+          <path class="hr-road" d="M446 -20 Q 486 450 453 920" />
+          <path class="hr-road" d="M550 -20 Q 517 450 556 920" />
+          <path class="hr-road" d="M654 -20 Q 688 450 649 920" />
+          <path class="hr-road" d="M758 -20 Q 724 450 742 920" />
+          <path class="hr-road" d="M862 -20 Q 827 450 867 920" />
+          <path class="hr-road" d="M966 -20 Q 943 450 954 920" />
+          <path class="hr-road" d="M1070 -20 Q 1083 450 1049 920" />
+          <path class="hr-road" d="M1174 -20 Q 1203 450 1151 920" />
+          <path class="hr-road" d="M1278 -20 Q 1311 450 1267 920" />
+          <path class="hr-road" d="M1382 -20 Q 1413 450 1404 920" />
+          <path class="hr-avenue" d="M-20 640 C 400 600 700 420 1460 380" />
+          <path class="hr-avenue" d="M520 -20 C 600 300 820 520 900 920" />
+          <path class="hr-avenue" d="M980 -20 C 1000 200 1100 300 1460 260" />
+        </svg>
+        <!-- Desktop: the live ride. hero-route.js draws the route around the
+             headline and cards (it measures them), then moves the rider. -->
+        <svg class="hr-desk" aria-hidden="true">
+          <path class="hr-plan hr-measure" d="" />
+          <path class="hr-line" pathLength="1000" d="" />
+          <circle class="hr-start" r="11" />
+          <g class="hr-flag"><path d="M0 0 v-42" /><path class="hr-flag-cloth" d="M0 -42 h-28 v19 h28z" /></g>
+          <g class="hr-rider"><circle class="hr-rider-ring" r="24"/><circle class="hr-rider-dot" r="10"/></g>
+          <g class="hr-tag hr-tag--fixed"><rect width="168" height="44" rx="10"/><circle class="hr-live" cx="18" cy="22" r="4"/><text x="30" y="28"><tspan class="hr-tag-km">0.0 km</tspan><tspan class="hr-tag-sep" dx="8">·</tspan><tspan class="hr-tag-spd" dx="8">0 km/h</tspan></text></g>
+        </svg>
+      </div>
+
+      <div class="wrap hero__inner">
+        <div class="hero__copy">
+          <div style="height:50px"></div>
+          <!-- <p class="chip chip--live"><span class="dot"></span>The app for motorcycle riders</p> -->
+          <h1 class="hero__title">Strava for Bikers</h1>
+          <h2 class="hero__tagline"><span class="slant">Flex your Ride.</span></h2>
+          <div style="height:20px"></div>
+
+          <div class="hero__price">
+            <span class="hero__price-now" data-price>$1.99</span>
+            <span class="hero__price-was"><s data-launch-price>$15.99/yr</s><small>after launch</small></span>
+            <span class="hero__price-off" data-discount hidden></span>
+          </div>
+          <div style="height:30px"></div>
+
+          <div class="hero__ctas">
+            <a href="#enroll" class="btn btn--primary btn--lg" data-cta>
+              <span>Pre-register</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+            <a href="#features" class="btn btn--ghost btn--lg">See how it works</a>
+          </div>
+          <ul class="hero__meta">
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>One-time payment</li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Secured by Stripe</li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>iOS &amp; Android</li>
+          </ul>
+          <p class="hero__count" id="heroCount" hidden><b data-count>0</b> riders already pre-registered</p>
+        </div>
+
+        <div class="hero__visual" aria-label="Examples of Throttle ride cards">
+          <div class="fan">
+            <!-- Phones: the live ride wraps around the cards -->
+            <svg class="hr-mob" viewBox="0 0 360 400" aria-hidden="true">
+              <path class="hr-plan hr-measure" d="M14 372 C28 373 69 381 100 380 C131 379 167 367 200 366 C233 365 275 386 300 376 C325 366 341 335 350 304 C359 273 357 227 356 190 C355 153 346 102 344 84" />
+              <path class="hr-line" pathLength="1000" d="M14 372 C28 373 69 381 100 380 C131 379 167 367 200 366 C233 365 275 386 300 376 C325 366 341 335 350 304 C359 273 357 227 356 190 C355 153 346 102 344 84" />
+              <circle class="hr-start" cx="14" cy="372" r="8" />
+              <g class="hr-flag"><path d="M344 84 v-32" /><path class="hr-flag-cloth" d="M344 52 h-22 v15 h22z" /></g>
+              <g class="hr-rider"><circle class="hr-rider-ring" r="18"/><circle class="hr-rider-dot" r="8"/></g>
+              <g class="hr-tag hr-tag--fixed"><rect width="168" height="44" rx="10"/><circle class="hr-live" cx="18" cy="22" r="4"/><text x="30" y="28"><tspan class="hr-tag-km">0.0 km</tspan><tspan class="hr-tag-sep" dx="8">·</tspan><tspan class="hr-tag-spd" dx="8">0 km/h</tspan></text></g>
+            </svg>
+            <picture class="fan__card fan__card--l">
+              <source srcset="assets/img/cards/map-glass.webp" type="image/webp" />
+              <img src="assets/img/cards/map-glass.jpg" alt="Ride card with the route on a map" width="720" height="900" />
+            </picture>
+            <picture class="fan__card fan__card--r">
+              <source srcset="assets/img/cards/orange-split.webp" type="image/webp" />
+              <img src="assets/img/cards/orange-split.jpg" alt="Orange ride card showing a 194 km/h top speed" width="720" height="900" />
+            </picture>
+            <picture class="fan__card fan__card--c">
+              <source srcset="assets/img/cards/photo-bold.webp" type="image/webp" />
+              <img src="assets/img/cards/photo-bold.jpg" alt="Ride card over a bike photo: 194 km/h top speed, 112 km/h average" width="720" height="900" fetchpriority="high" />
+            </picture>
+
+            <div class="float float--gauge keep-dark" aria-hidden="true">
+              <svg viewBox="0 0 120 70" class="gauge">
+                <path class="gauge__track" d="M10 62a50 50 0 0 1 100 0" />
+                <path class="gauge__fill" d="M10 62a50 50 0 0 1 100 0" pathLength="100" />
+              </svg>
+              <div class="gauge__read"><b data-speed>0</b><small>km/h</small></div>
+              <span class="float__label">Top speed</span>
+            </div>
+            <div class="float float--rec keep-dark" aria-hidden="true">
+              <span class="rec-dot"></span>Recording <b data-clock>00:13:42</b>
+            </div>
+          <!--   <div class="float float--kudos keep-dark" aria-hidden="true">
+              <span class="kudos-ico">🔥</span><span><b>+12 kudos</b><small>on Friday evening ride</small></span>
+            </div> -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== MARQUEE ============================== -->
+    <div class="marquee" aria-label="Highlights">
+      <div class="marquee__track" data-marquee>
+        <span>Live GPS tracking</span><i>◆</i>
+        <span>Keeps recording with the screen off</span><i>◆</i>
+        <span>Top speed &amp; avg speed</span><i>◆</i>
+        <span>31 ride-card styles</span><i>◆</i>
+        <span>Per-bike km in your garage</span><i>◆</i>
+        <span>Ride Journal</span><i>◆</i>
+        <span>Flags on a globe</span><i>◆</i>
+        <span>Follow riders · give kudos</span><i>◆</i>
+      </div>
+    </div>
+
+    <!-- ============================== FEATURES ============================== -->
+    <section class="section" id="features">
+      <div class="wrap">
+        <header class="section__head reveal">
+          <p class="eyebrow">What Throttle does</p>
+          <h2 class="h2">Built for bikes.<br /><span class="muted">Not for runners.</span></h2>
+          <p class="section__lede">Fitness trackers count steps and heart rate. Throttle counts the things riders care about: the route, the speed, the bike that did it.</p>
+        </header>
+
+        <div class="bento">
+          <!-- Live tracking -->
+          <article class="tile tile--track reveal">
+            <div class="tile__text">
+              <span class="tile__num">01</span>
+              <h3>Live tracking that doesn't quit</h3>
+              <p>Pick your bike and go. A live map follows you and draws the line. Jitter is filtered out, recording carries on with your screen off, and rides save to your phone first, so a dead zone never costs you a ride.</p>
+            </div>
+            <div class="trackviz keep-dark" aria-hidden="true">
+              <svg viewBox="0 0 420 240" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                  <pattern id="mapgrid" width="28" height="28" patternUnits="userSpaceOnUse">
+                    <path d="M28 0H0V28" fill="none" stroke="rgba(255,255,255,.06)" />
+                  </pattern>
+                  <linearGradient id="routeGrad" x1="0" x2="1">
+                    <stop offset="0" stop-color="#ff9a52" />
+                    <stop offset="1" stop-color="#e36b24" />
+                  </linearGradient>
+                </defs>
+                <rect width="420" height="240" fill="url(#mapgrid)" />
+                <path class="road" d="M-10 200 C80 190 120 150 180 160 S300 210 430 120" />
+                <path class="road" d="M120 -10 C140 60 110 140 150 250" />
+                <path class="road road--thin" d="M260 -10 C250 80 300 120 290 250" />
+                <path class="route" d="M34 196 C62 176 74 126 116 122 S176 156 206 116 S258 44 306 56 S362 96 388 62" />
+                <circle cx="34" cy="196" r="6" class="pin-start" />
+              </svg>
+              <span class="trackviz__dot"></span>
+              <div class="readout">
+                <div><small>Speed</small><b>112<i>km/h</i></b></div>
+                <div><small>Distance</small><b>24.3<i>km</i></b></div>
+                <div><small>Time</small><b>13:42</b></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Ride cards -->
+          <article class="tile tile--cards reveal">
+            <div class="tile__text">
+              <span class="tile__num">02</span>
+              <h3>Ride cards built to flex</h3>
+              <p>Finish a ride and get a 1080×1350 card with your top speed front and centre, over your bike, your photo or the route. One tap to Instagram.</p>
+            </div>
+            <div class="cardstack" aria-hidden="true">
+              <picture><source srcset="assets/img/cards/photo-glass.webp" type="image/webp" /><img src="assets/img/cards/photo-glass.jpg" alt="" loading="lazy" width="720" height="900" /></picture>
+              <picture><source srcset="assets/img/cards/route-overlay.webp" type="image/webp" /><img src="assets/img/cards/route-overlay.jpg" alt="" loading="lazy" width="720" height="900" /></picture>
+            </div>
+          </article>
+
+          <!-- Garage -->
+          <article class="tile tile--garage reveal">
+            <div class="tile__text">
+              <span class="tile__num">03</span>
+              <h3>Your garage, by the km</h3>
+              <p>Every ride is credited to the bike you took, so you always know what each machine has done.</p>
+            </div>
+            <ul class="garage" aria-hidden="true">
+              <li><span class="garage__bike" style="--img:url(../img/cards/photo-glass.webp)"></span><div><b>M1000 RR</b><small>Primary</small><div class="bar"><i style="--w:86%"></i></div></div><em>2,418 km</em></li>
+              <li><span class="garage__bike garage__bike--alt" style="--img:url(../img/cards/orange-split.webp)"></span><div><b>Duke 390</b><small>Weekend</small><div class="bar"><i style="--w:41%"></i></div></div><em>1,102 km</em></li>
+            </ul>
+          </article>
+
+          <!-- Social -->
+          <article class="tile tile--social reveal">
+            <div class="tile__text">
+              <span class="tile__num">04</span>
+              <h3>A feed of riders</h3>
+              <p>Follow riders, give kudos, get notified. Every ride can be public, followers-only or private.</p>
+            </div>
+            <div class="post" aria-hidden="true">
+              <div class="post__head">
+                <span class="avatar">S</span>
+                <div><b>Friday evening ride</b><small>San Bruno → Cupertino</small></div>
+                <span class="vis">Followers</span>
+              </div>
+              <div class="post__stats"><div><small>Dist</small><b>24.3</b></div><div><small>Avg</small><b>112</b></div><div><small>Top</small><b class="o">194</b></div></div>
+              <div class="post__foot"><span class="kudo">🔥 <b data-kudos>47</b></span><span class="follow">Follow</span></div>
+            </div>
+          </article>
+
+          <!-- Journal -->
+          <article class="tile tile--journal reveal">
+            <div class="tile__text">
+              <span class="tile__num">05</span>
+              <h3>Ride Journal</h3>
+              <p>Pin photos and videos to the exact spot on your route and turn a ride into a story.</p>
+            </div>
+            <div class="journal" aria-hidden="true">
+              <svg viewBox="0 0 300 120"><path d="M10 100 C60 90 70 30 130 40 S220 100 290 20" /></svg>
+              <span class="jpin" style="--x:22%;--y:52%;--img:url(../img/cards/photo-stack.webp)"></span>
+              <span class="jpin" style="--x:56%;--y:44%;--img:url(../img/cards/photo-bold.webp)"></span>
+              <span class="jpin" style="--x:88%;--y:10%;--img:url(../img/cards/photo-glass.webp)"></span>
+            </div>
+          </article>
+
+          <!-- Flags -->
+          <article class="tile tile--flags reveal">
+            <div class="tile__text">
+              <span class="tile__num">06</span>
+              <h3>Plant your flags</h3>
+              <p>The furthest point of every ride lands on your globe. Watch your map fill up.</p>
+            </div>
+            <div class="globe keep-dark" aria-hidden="true">
+              <svg viewBox="0 0 200 200">
+                <defs>
+                  <clipPath id="globeClip"><circle cx="100" cy="100" r="82" /></clipPath>
+                  <radialGradient id="globeShade" cx="35%" cy="30%" r="80%">
+                    <stop offset="0" stop-color="#2a2a30" />
+                    <stop offset="1" stop-color="#101013" />
+                  </radialGradient>
+                  <pattern id="dots" width="9" height="9" patternUnits="userSpaceOnUse"><circle cx="4.5" cy="4.5" r="1.3" fill="rgba(255,255,255,.22)" /></pattern>
+                </defs>
+                <circle cx="100" cy="100" r="82" fill="url(#globeShade)" />
+                <g clip-path="url(#globeClip)">
+                  <g class="globe__spin">
+                    <rect x="-200" y="0" width="600" height="200" fill="url(#dots)" />
+                  </g>
+                  <ellipse cx="100" cy="100" rx="30" ry="82" class="meridian" />
+                  <ellipse cx="100" cy="100" rx="62" ry="82" class="meridian" />
+                  <path d="M18 100h164M30 60h140M30 140h140" class="meridian" />
+                </g>
+                <circle cx="100" cy="100" r="82" fill="none" stroke="rgba(255,255,255,.12)" />
+                <g class="flag" style="--d:0s"><path d="M78 76v-18l12 5-12 5" /></g>
+                <g class="flag" style="--d:.4s"><path d="M124 104v-18l12 5-12 5" /></g>
+                <g class="flag" style="--d:.8s"><path d="M96 132v-18l12 5-12 5" /></g>
+              </svg>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== CARD GALLERY ============================== -->
+    <section class="section section--tight" id="cards">
+      <div class="wrap">
+        <header class="section__head section__head--row reveal">
+          <div>
+            <p class="eyebrow">Ride cards</p>
+            <h2 class="h2">One ride.<br /><span class="muted">Thirty-one ways to post it.</span></h2>
+          </div>
+          <div class="rail-ctrl">
+            <button class="iconbtn" data-rail="-1" aria-label="Previous cards"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <button class="iconbtn" data-rail="1" aria-label="Next cards"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+        </header>
+      </div>
+      <div class="rail" id="rail" tabindex="0" aria-label="Ride card styles">
+        <figure><picture><source srcset="assets/img/cards/photo-bold.webp" type="image/webp" /><img src="assets/img/cards/photo-bold.jpg" alt="Bold numbers over a bike photo" loading="lazy" width="720" height="900" /></picture><figcaption>Bold</figcaption></figure>
+        <figure><picture><source srcset="assets/img/cards/route-overlay.webp" type="image/webp" /><img src="assets/img/cards/route-overlay.jpg" alt="Route traced over the bike photo" loading="lazy" width="720" height="900" /></picture><figcaption>Route overlay</figcaption></figure>
+        <figure><picture><source srcset="assets/img/cards/orange-split.webp" type="image/webp" /><img src="assets/img/cards/orange-split.jpg" alt="Half photo, half orange panel with stats" loading="lazy" width="720" height="900" /></picture><figcaption>Split</figcaption></figure>
+        <figure><picture><source srcset="assets/img/cards/map-glass.webp" type="image/webp" /><img src="assets/img/cards/map-glass.jpg" alt="Route on a map under a glass panel" loading="lazy" width="720" height="900" /></picture><figcaption>Map glass</figcaption></figure>
+        <figure><picture><source srcset="assets/img/cards/photo-glass.webp" type="image/webp" /><img src="assets/img/cards/photo-glass.jpg" alt="Bike photo under a glass stats panel" loading="lazy" width="720" height="900" /></picture><figcaption>Photo glass</figcaption></figure>
+        <figure><picture><source srcset="assets/img/cards/map-stack.webp" type="image/webp" /><img src="assets/img/cards/map-stack.jpg" alt="Stacked stats over a map" loading="lazy" width="720" height="900" /></picture><figcaption>Map stack</figcaption></figure>
+        <figure><picture><source srcset="assets/img/cards/photo-stack.webp" type="image/webp" /><img src="assets/img/cards/photo-stack.jpg" alt="Stacked stats over a bike photo" loading="lazy" width="720" height="900" /></picture><figcaption>Photo stack</figcaption></figure>
+      </div>
+    </section>
+
+    <!-- ============================== OFFER ============================== -->
+    <section class="section" id="enroll">
+      <div class="wrap">
+        <div class="offer reveal">
+          <div class="offer__glow" aria-hidden="true"></div>
+          <div class="offer__left">
+            <p class="chip chip--orange">Pre-registration offer</p>
+            <h2 class="h2 offer__title">Pre-register.<br /><span class="slant">Less than a coffee.</span></h2>
+            <div class="price">
+              <span class="price__big" data-price>$1.99</span>
+              <span class="price__side">
+                <s data-launch-price>$15.99/yr</s>
+                <small>one-time · pre-registration</small>
+              </span>
+            </div>
+            <ul class="perks">
+              <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Throttle Pro, ready for you on launch day</span></li>
+              <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>One-time payment of <span data-price>$1.99</span>, secured by Stripe</span></li>
+              <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Claim it by signing in to the app with this email</span></li>
+              <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Pro will be <span data-launch-text>$15.99 a year</span> after launch</span></li>
+            </ul>
+          </div>
+
+          <form class="enroll" id="enrollForm" novalidate>
+            <h3>Save your spot</h3>
+            <p class="enroll__sub">Use the Google account email you'll sign in to Throttle with.</p>
+            <label class="field">
+              <span>Email</span>
+              <input type="email" name="email" id="email" autocomplete="email" inputmode="email" placeholder="you@gmail.com" required maxlength="254" />
+            </label>
+            <label class="field">
+              <span>What do you ride? <em>Optional</em></span>
+              <input type="text" name="bike" autocomplete="off" placeholder="e.g. BMW M1000 RR" maxlength="80" />
+            </label>
+            <button type="submit" class="btn btn--primary btn--lg btn--block" id="enrollBtn">
+              <span class="btn__label">Pre-register for <span data-price>$1.99</span></span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+            <p class="form-msg" id="formMsg" role="status" aria-live="polite"></p>
+            <p class="secure">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              Secure checkout by Stripe. We never see your card.
+            </p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== FAQ ============================== -->
+    <section class="section section--tight" id="faq">
+      <div class="wrap wrap--narrow">
+        <header class="section__head reveal">
+          <p class="eyebrow">FAQ</p>
+          <h2 class="h2">Questions, answered.</h2>
+        </header>
+        <div class="faq reveal">
+          <details>
+            <summary>What is Throttle?</summary>
+            <p>A ride tracker and social app made for motorcycles. It records your route, distance, time, average and top speed with GPS, makes a shareable ride card from every ride, keeps per-bike kilometres in your garage, and lets you follow other riders.</p>
+          </details>
+          <details>
+            <summary>What do I get for <span data-price>$1.99</span>?</summary>
+            <p>Throttle Pro, ready on your account the day the app launches. Pre-registering costs <span data-price>$1.99</span>, once; after launch, Pro costs <span data-launch-text>$15.99 a year</span>.</p>
+          </details>
+          <details>
+            <summary>How do I claim it?</summary>
+            <p>Sign in to the Throttle app with the same email you used here. Your pre-registration is attached to your account automatically.</p>
+          </details>
+          <details>
+            <summary>When does the app launch?</summary>
+            <p>We're in final testing on iOS and Android. Founding riders hear first, by email, the day it's out.</p>
+          </details>
+          <details>
+            <summary>Can I get a refund?</summary>
+            <p>Yes. Reply to your Stripe receipt and we'll refund you, no questions asked.</p>
+          </details>
+          <details>
+            <summary>Is my payment safe?</summary>
+            <p>Payment happens on Stripe's secure checkout page. Your card details go straight to Stripe and never touch our servers.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== FINAL CTA ============================== -->
+    <section class="final">
+      <div class="wrap final__inner reveal">
+        <h2 class="final__title">Your next ride<br /><span class="slant">deserves a number.</span></h2>
+        <a href="#enroll" class="btn btn--primary btn--lg" data-cta><span>Pre-register for <span data-price>$1.99</span></span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <a href="#top" aria-label="Back to top"><img src="assets/img/logo-light.png" alt="Throttle" width="640" height="114" class="footer__logo logo-on-dark" loading="lazy" /><img src="assets/img/logo-dark.png" alt="Throttle" width="640" height="114" class="footer__logo logo-on-light" loading="lazy" /></a>
+      <p>© <span data-year>2026</span> Throttle. Made by riders, for riders.</p>
+      <nav aria-label="Footer">
+        <a href="#top">Home</a>
+        <a href="#features">Features</a>
+        <a href="#faq">FAQ</a>
+        <a href="#" data-contact hidden>Contact</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- Mobile sticky CTA -->
+  <div class="sticky-cta" id="stickyCta" aria-hidden="true">
+    <div><b><span data-price>$1.99</span> <s data-launch-price>$15.99/yr</s></b><small>Pre-registration</small></div>
+    <a href="#enroll" class="btn btn--primary btn--sm" data-cta tabindex="-1">Pre-register</a>
+  </div>
+
+  <!-- Post-checkout result -->
+  <div class="overlay" id="overlay" hidden>
+    <canvas id="confetti" aria-hidden="true"></canvas>
+    <div class="overlay__card" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+      <div class="overlay__badge" aria-hidden="true">
+        <img src="assets/img/favicon-180.png" alt="" width="64" height="64" />
+      </div>
+      <h2 id="overlayTitle">You're pre-registered.</h2>
+      <p id="overlayText">Your spot is saved. We'll email you the moment Throttle is ready. Sign in with the same email to claim Pro.</p>
+      <button class="btn btn--primary btn--block" id="overlayClose">Nice</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="assets/js/config.js?v=3"></script>
+  <script src="assets/js/main.js?v=5" defer></script>
+  <script src="assets/js/hero-route.js?v=14" defer></script>
+</body>
+</html>

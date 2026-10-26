@@ -1,0 +1,123 @@
+/* indexv2 page: solid nav, and a hero with a faint street map and a live
+   ride drawn over it. Loaded only by indexv2.html, on top of styles.css.
+   hero-route.js draws the desktop route around the headline and cards and
+   moves the rider; with reduced motion the finished route shows. */
+
+:root {
+  --hr-road: rgba(255, 255, 255, 0.045);
+  --hr-avenue: rgba(255, 255, 255, 0.075);
+  --hr-water: rgba(80, 140, 210, 0.12);
+  --hr-park: rgba(90, 170, 100, 0.08);
+}
+:root[data-theme="light"] {
+  --hr-road: rgba(24, 22, 30, 0.045);
+  --hr-avenue: rgba(24, 22, 30, 0.075);
+  --hr-water: rgba(90, 150, 215, 0.13);
+  --hr-park: rgba(100, 170, 95, 0.1);
+}
+
+/* ---------- Nav: solid and full width from the start ----------
+   (the same look it gets after scrolling, just more opaque) */
+:root { --nav-solid: rgba(13, 13, 15, 0.92); }
+:root[data-theme="light"] { --nav-solid: rgba(250, 249, 246, 0.94); }
+.nav,
+.nav.is-scrolled {
+  background: var(--nav-solid);
+  backdrop-filter: saturate(160%) blur(16px);
+  -webkit-backdrop-filter: saturate(160%) blur(16px);
+  border-bottom-color: var(--line);
+}
+
+/* ---------- Hero spacing: room for the route above and below ---------- */
+.hero--route { padding-bottom: 150px; }
+
+/* ---------- Headline: big h1, then "Flex your Ride." as a smaller h2 ----------
+   On desktop the h2 is smaller than the h1 and stays on one line; on phones
+   it matches the h1 size (the look it had when both were in the h1). */
+.hero--route .hero__title { margin-bottom: 16px; }
+.hero__tagline {
+  margin: 0 0 30px;
+  font-family: var(--display); font-weight: 700; text-transform: uppercase;
+  font-size: clamp(38px, 3.9vw, 58px); line-height: 1; letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.hero__tagline .slant { display: inline-block; }
+
+.hero--route .hero__bg {
+  background: radial-gradient(ellipse 55% 50% at 80% 30%, var(--orange-soft), transparent 70%);
+}
+
+/* ---------- Map ---------- */
+.hr-map {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.3) 30%, #000 58%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.3) 30%, #000 58%);
+}
+.hr-road { fill: none; stroke: var(--hr-road); stroke-width: 5; stroke-linecap: round; }
+.hr-avenue { fill: none; stroke: var(--hr-avenue); stroke-width: 12; stroke-linecap: round; }
+.hr-water { fill: none; stroke: var(--hr-water); stroke-width: 54; stroke-linecap: round; }
+.hr-park { fill: var(--hr-park); }
+
+/* ---------- Route + rider ---------- */
+.hr-desk { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hr-mob { display: none; }
+/* The distance/speed tag gets its own layer above the cards (hero-route.js
+   moves it there), matching the route's coordinates exactly. */
+.hr-tags { pointer-events: none; overflow: visible; }
+.hr-tags--desk { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; }
+
+.hr-plan { fill: none; stroke: var(--line-2); stroke-width: 3; stroke-dasharray: 2 12; stroke-linecap: round; }
+.hr-line {
+  fill: none; stroke: var(--orange); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1000; stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 10px rgba(227, 107, 36, 0.45));
+}
+.hr-start { fill: var(--green); stroke: var(--bg); stroke-width: 5; }
+.hr-flag path { fill: none; stroke: var(--text); stroke-width: 3; stroke-linecap: round; }
+.hr-flag .hr-flag-cloth { fill: var(--orange); stroke: none; }
+
+.hr-rider { opacity: 0; transition: opacity 0.3s; }
+.hr-rider.is-on { opacity: 1; }
+.hr-tag--fixed { opacity: 0; transition: opacity 0.3s; }
+.is-live .hr-tag--fixed { opacity: 1; }
+.hr-rider-dot { fill: #fff; stroke: var(--orange); stroke-width: 6; }
+.hr-rider-ring { fill: rgba(227, 107, 36, 0.22); transform-box: fill-box; transform-origin: center; animation: hr-ping 1.6s ease-out infinite; }
+@keyframes hr-ping { from { transform: scale(0.5); opacity: 1; } to { transform: scale(2.2); opacity: 0; } }
+
+/* The tag is a small dark "app" pill in both themes. */
+.hr-tag rect { fill: #17171b; stroke: rgba(255, 255, 255, 0.12); }
+.hr-tag text { font-family: var(--body); font-size: 15px; font-weight: 600; fill: #fbfaf4; font-variant-numeric: tabular-nums; }
+.hr-tag .hr-tag-sep { fill: #6c6a73; }
+.hr-tag .hr-tag-spd { fill: #ff8b45; }
+.hr-tag .hr-live { fill: #ff4d4d; animation: blink 1.2s infinite; }
+/* The "Top speed" gauge follows the ride live, so it only needs a short ease. */
+.hero--route .gauge__fill { transition: stroke-dashoffset 0.15s linear; }
+
+/* ---------- Phones / tablets: single column ---------- */
+@media (max-width: 1020px) {
+  .hero--route { padding-bottom: 72px; }
+  .hero__tagline .slant { transform-origin: center center; }
+  .hr-map {
+    -webkit-mask-image: linear-gradient(180deg, transparent 25%, rgba(0, 0, 0, 0.4) 50%, #000 75%);
+    mask-image: linear-gradient(180deg, transparent 25%, rgba(0, 0, 0, 0.4) 50%, #000 75%);
+  }
+  .hr-desk, .hr-tags--desk { display: none; }
+  /* Sits inside .fan, behind the cards, with room around them for the line. */
+  .hr-mob {
+    display: block; position: absolute; left: -12%; top: -10%; width: 124%; height: auto;
+    aspect-ratio: 360 / 400; overflow: visible; pointer-events: none;
+  }
+  .hr-tags--mob { z-index: 4; }
+  .hr-mob .hr-line { stroke-width: 5; }
+  .hr-mob .hr-plan { stroke-width: 2; stroke-dasharray: 2 9; }
+  .hr-mob .hr-start { stroke-width: 3; }
+  .hr-mob .hr-flag path { stroke-width: 2.5; }
+  .hr-mob .hr-rider-dot { stroke-width: 5; }
+  .hr-mob .hr-tag text { font-size: 14px; }
+}
+
+/* Phones: same size as the h1, as before. */
+@media (max-width: 760px) {
+  .hero--route .hero__title { margin-bottom: 18px; }
+  .hero__tagline { margin-bottom: 22px; font-size: clamp(42px, 12vw, 60px); line-height: 0.94; white-space: normal; }
+}
