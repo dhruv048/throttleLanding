@@ -1,6 +1,8 @@
-// Starts a founding-rider pre-enrollment: records a pending row in
-// public.pre_enrollments and returns a Stripe Checkout URL for the one-time
-// $1.99 pre-registration payment. Called by the landing page's form.
+// Starts a pre-registration: checks the rider's @username is free, records a
+// pending row in public.pre_enrollments (start_pre_enrollment) and returns a
+// Stripe Checkout URL for the one-time $1.99 payment. Nothing is held while
+// the rider pays: the username is reserved only when Stripe confirms the
+// payment (stripe-webhook). Called by the landing page's form.
 //
 // Secrets: STRIPE_SECRET_KEY, SITE_URL, optional STRIPE_PRICE_ID and
 // ALLOWED_ORIGINS. SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are provided by
@@ -26,6 +28,11 @@ const PRICE_ID = Deno.env.get("STRIPE_PRICE_ID") ?? "";
 const FALLBACK_AMOUNT_CENTS = 199;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// Same rule as the app (and the profiles table): 3-24 lowercase letters, numbers, underscores.
+const USERNAME_RE = /^[a-z0-9_]{3,24}$/;
+// Page to come back to after Stripe: a path on this site, e.g. "/" or "/indexv2.html".
+const RETURN_RE = /^\/[A-Za-z0-9._\-\/]{0,80}$/;
+
 const SOURCE_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "ref", "referrer"];
 
 function cleanSource(raw: unknown): Record<string, string> {
@@ -59,30 +66,41 @@ Deno.serve(async (req) => {
     return json(req, { error: "Enter a valid email address." }, 400);
   }
   const bike = typeof body.bike === "string" && body.bike.trim() ? body.bike.trim().slice(0, 80) : null;
+  // The old form (index.html) has no username; the new one requires it.
+  const username = typeof body.username === "string" && body.username.trim()
+    ? body.username.trim().replace(/^@/, "").toLowerCase()
+    : null;
+  if (username !== null && !USERNAME_RE.test(username)) {
+    return json(req, { error: "Usernames are 3-24 lowercase letters, numbers or underscores." }, 400);
+  }
   const source = cleanSource(body.source);
+  const returnTo = typeof body.return_to === "string" && RETURN_RE.test(body.return_to) ? body.return_to : "/";
 
+  // Check the username and record the pending pre-enrollment (or find the
+  // email's existing paid one).
+  const { data: rows, error: startErr } = await db.rpc("start_pre_enrollment", {
+    p_email: email,
+    p_username: username,
+    p_source: source,
+    p_bike: bike,
+  });
+  if (startErr) {
+    if (startErr.message?.includes("username_taken")) {
+      return json(req, { error: "That username is taken. Try another.", username_taken: true }, 409);
+    }
+    if (startErr.message?.includes("invalid_username")) {
+      return json(req, { error: "Usernames are 3-24 lowercase letters, numbers or underscores." }, 400);
+    }
+    console.error("create-checkout: start_pre_enrollment failed", startErr);
+    return json(req, { error: "Something went wrong. Please try again." }, 500);
+  }
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  if (!row) {
+    console.error("create-checkout: start_pre_enrollment returned nothing");
+    return json(req, { error: "Something went wrong. Please try again." }, 500);
+  }
   // Already paid with this email: don't charge twice.
-  const { data: paid, error: paidErr } = await db
-    .from("pre_enrollments")
-    .select("id")
-    .eq("email", email)
-    .eq("status", "paid")
-    .limit(1);
-  if (paidErr) {
-    console.error("create-checkout: lookup failed", paidErr);
-    return json(req, { error: "Something went wrong. Please try again." }, 500);
-  }
-  if (paid && paid.length > 0) return json(req, { already_enrolled: true });
-
-  const { data: row, error: insertErr } = await db
-    .from("pre_enrollments")
-    .insert({ email, bike, source })
-    .select("id")
-    .single();
-  if (insertErr || !row) {
-    console.error("create-checkout: insert failed", insertErr);
-    return json(req, { error: "Something went wrong. Please try again." }, 500);
-  }
+  if (row.already_paid) return json(req, { already_enrolled: true, username: row.username });
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -90,7 +108,7 @@ Deno.serve(async (req) => {
       customer_email: email,
       customer_creation: "always",
       client_reference_id: row.id,
-      metadata: { enrollment_id: row.id, plan: "pre_register" },
+      metadata: { enrollment_id: row.id, plan: "pre_register", username: username ?? "" },
       payment_intent_data: { metadata: { enrollment_id: row.id, plan: "pre_register" } },
       line_items: [
         PRICE_ID
@@ -107,8 +125,8 @@ Deno.serve(async (req) => {
             },
           },
       ],
-      success_url: `${SITE_URL}/?enrolled={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${SITE_URL}/?cancelled=1#enroll`,
+      success_url: `${SITE_URL}${returnTo}?enrolled={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE_URL}${returnTo}?cancelled=1#enroll`,
     });
 
     await db

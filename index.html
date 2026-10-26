@@ -30,7 +30,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="preload" as="image" href="assets/img/cards/photo-bold.webp" type="image/webp" />
   <link rel="stylesheet" href="assets/css/styles.css?v=10" />
-  <link rel="stylesheet" href="assets/css/v2.css?v=6" />
+  <link rel="stylesheet" href="assets/css/v2.css?v=7" />
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -390,9 +390,14 @@
               <span>Email</span>
               <input type="email" name="email" id="email" autocomplete="email" inputmode="email" placeholder="you@gmail.com" required maxlength="254" />
             </label>
-            <label class="field">
-              <span>What do you ride? <em>Optional</em></span>
-              <input type="text" name="bike" autocomplete="off" placeholder="e.g. BMW M1000 RR" maxlength="80" />
+            <label class="field field--handle" id="usernameField">
+              <span>Reserve your username</span>
+              <span class="handle">
+                <span class="handle__at" aria-hidden="true">@</span>
+                <input type="text" name="username" id="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="yourname" required minlength="3" maxlength="24" aria-describedby="usernameMsg" />
+                <span class="handle__state" aria-hidden="true"></span>
+              </span>
+              <small class="handle__msg" id="usernameMsg" aria-live="polite">Your @handle in the app. Once reserved, nobody else can take it.</small>
             </label>
             <button type="submit" class="btn btn--primary btn--lg btn--block" id="enrollBtn">
               <span class="btn__label">Pre-register for <span data-price>$1.99</span></span>
@@ -426,7 +431,7 @@
           </details>
           <details>
             <summary>How do I claim it?</summary>
-            <p>Sign in to the Throttle app with the same email you used here. Your pre-registration is attached to your account automatically.</p>
+            <p>Sign in to the Throttle app with the same email you used here. Your pre-registration is attached to your account automatically, and your reserved @username is waiting for you when you set up your profile.</p>
           </details>
           <details>
             <summary>When does the app launch?</summary>
@@ -488,7 +493,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="assets/js/config.js?v=3"></script>
-  <script src="assets/js/main.js?v=5" defer></script>
+  <script src="assets/js/main.js?v=6" defer></script>
   <script src="assets/js/hero-route.js?v=14" defer></script>
 </body>
 </html>

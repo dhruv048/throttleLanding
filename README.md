@@ -24,8 +24,10 @@ throttle_landing/
         └── _shared/cors.ts
 ```
 
-The database table lives with the app's other migrations:
-`../wheelsclub/supabase/migrations/20261024000000_pre_enrollments.sql`.
+The database lives with the app's other migrations:
+`../wheelsclub/supabase/migrations/20261024000000_pre_enrollments.sql` and
+`20261027000000_reserved_usernames.sql` (usernames riders reserve when they
+pre-register; nobody else can take them on the site or in the app).
 
 ## How a pre-enrollment works
 
@@ -85,19 +87,55 @@ calls only from your site.
 
 ### 4. Stripe webhook
 
-Stripe dashboard → **Developers → Webhooks → Add endpoint**:
+The webhook is how the database learns a payment went through. It's the
+moment a pre-registration becomes "paid" and the rider's @username becomes
+theirs. Without it nothing is ever marked paid.
 
-- URL: `https://<your-project-ref>.supabase.co/functions/v1/stripe-webhook`
-- Events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
-  `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`
+**a. Pick the mode.** The webhook must be in the same Stripe mode as
+`STRIPE_SECRET_KEY`: test (`sk_test_…`) or live (`sk_live_…`). Use the
+**Test mode** toggle at the top of the Stripe dashboard; set up test first.
 
-Copy the signing secret and set it:
+**b. Create the endpoint.** Stripe dashboard → **Developers → Webhooks**
+(in newer dashboards: **Workbench → Webhooks**) → **Add endpoint** (or
+**Add destination**):
+
+- If asked where events come from, choose **Your account**.
+- Events to send (search each one and tick it):
+  - `checkout.session.completed`
+  - `checkout.session.async_payment_succeeded`
+  - `checkout.session.async_payment_failed`
+  - `checkout.session.expired`
+  - `charge.refunded`
+- If asked for a destination type, choose **Webhook endpoint**.
+- Endpoint URL: `https://<your-project-ref>.supabase.co/functions/v1/stripe-webhook`
+- Description (optional): "Throttle pre-registration". Save.
+
+**c. Copy the signing secret.** Open the endpoint you just made → **Signing
+secret** → **Reveal** → copy the value starting with `whsec_`.
+
+**d. Give it to the function** (from this folder):
 
 ```bash
-npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
+npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... --project-ref <your-project-ref>
 ```
 
-Test with card `4242 4242 4242 4242`, any future date, any CVC.
+No redeploy needed; the function reads the secret on its next request.
+
+**e. Test it.** On the site, pre-register with a real email you control and a
+new username, and pay with card `4242 4242 4242 4242`, any future expiry,
+any CVC, any postcode. Then check:
+
+- Stripe → your webhook endpoint → **Event deliveries**: `checkout.session.completed`
+  shows **200**. (400 means the signing secret doesn't match; 500 means the
+  database step failed, see the function's logs in Supabase →
+  **Edge Functions → stripe-webhook → Logs**.)
+- Supabase → **Table Editor → pre_enrollments**: your row has
+  `status = paid` and your `username`.
+- The site's username check now says that name is reserved.
+
+**f. Going live.** Switch Stripe to live mode and repeat b–d there (live mode
+has its own endpoint and its own `whsec_` secret), and set the live
+`STRIPE_SECRET_KEY` (`sk_live_…`). Test-mode and live-mode secrets can't be mixed.
 
 ### 5. Host the page
 

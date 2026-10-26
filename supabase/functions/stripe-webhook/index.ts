@@ -41,17 +41,38 @@ async function updateForSession(
   if (error) throw error;
 }
 
+// Payment succeeded: mark the pre-enrollment paid and reserve its username
+// (complete_pre_enrollment). This is the moment a username becomes the
+// rider's; if someone else's payment for the same name landed first, the
+// payment still counts and the rider picks another name in the app.
 async function markPaid(session: Stripe.Checkout.Session) {
   if (session.payment_status !== "paid") return; // async methods confirm later
-  await updateForSession(session, {
-    status: "paid",
-    paid_at: new Date().toISOString(),
-    stripe_checkout_session_id: session.id,
-    stripe_payment_intent_id: idOf(session.payment_intent),
-    stripe_customer_id: idOf(session.customer),
-    amount_cents: session.amount_total,
-    currency: session.currency,
+  let enrollmentId = session.metadata?.enrollment_id ?? session.client_reference_id ?? null;
+  if (!enrollmentId) {
+    const { data, error } = await db.from("pre_enrollments").select("id")
+      .eq("stripe_checkout_session_id", session.id).maybeSingle();
+    if (error) throw error;
+    enrollmentId = data?.id ?? null;
+  }
+  if (!enrollmentId) {
+    console.error(`stripe-webhook: no pre-enrollment for session ${session.id}`);
+    return;
+  }
+  const { data, error } = await db.rpc("complete_pre_enrollment", {
+    p_id: enrollmentId,
+    p_session_id: session.id,
+    p_payment_intent: idOf(session.payment_intent),
+    p_customer: idOf(session.customer),
+    p_amount_cents: session.amount_total,
+    p_currency: session.currency,
   });
+  if (error) throw error;
+  const result = Array.isArray(data) ? data[0] : data;
+  if (result?.status === "paid_username_taken") {
+    console.warn(`stripe-webhook: ${enrollmentId} paid but its username was already taken; flagged for the rider to pick another`);
+  } else if (result?.status === "not_found") {
+    console.error(`stripe-webhook: pre-enrollment ${enrollmentId} not found`);
+  }
 }
 
 Deno.serve(async (req) => {

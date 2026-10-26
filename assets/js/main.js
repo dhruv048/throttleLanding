@@ -224,10 +224,81 @@
   const say = (text, ok = false) => { msg.textContent = text; msg.classList.toggle("is-ok", ok); };
   emailInput.addEventListener("input", () => { emailInput.removeAttribute("aria-invalid"); if (!msg.classList.contains("is-ok")) say(""); });
 
+  /* Username reservation (only on pages whose form has a username field). The
+     database decides availability: username_status() checks other riders'
+     profiles and paid reservations; the checkout re-checks it, and the name
+     becomes the rider's when the payment succeeds. */
+  const userInput = form.elements.username || null;
+  const userField = userInput ? userInput.closest(".field--handle") : null;
+  const userMsg = userField ? userField.querySelector(".handle__msg") : null;
+  const USER_HINT = userMsg ? userMsg.textContent : "";
+  const USER_RE = /^[a-z0-9_]{3,24}$/;
+  let userState = "empty";   // empty | invalid | checking | available | taken | reserved | error
+  let userChecked = "";      // the value the state belongs to
+  let userTimer = 0;
+  let userSeq = 0;
+
+  const setUser = (state, text) => {
+    userState = state;
+    if (!userField) return;
+    userField.dataset.state = state;
+    userInput.setAttribute("aria-invalid", String(["invalid", "taken", "reserved"].includes(state)));
+    userMsg.textContent = text;
+  };
+  const userText = {
+    empty: () => USER_HINT,
+    invalid: (n) => (n.length < 3 ? "At least 3 characters." : "Use lowercase letters, numbers and underscores (3-24)."),
+    checking: () => "Checking…",
+    available: (n) => `@${n} is available. It's yours once you pre-register.`,
+    taken: (n) => `@${n} is already taken. Try another.`,
+    reserved: (n) => `@${n} is reserved by another rider. Try another.`,
+    error: () => "Couldn't check right now. We'll check again when you pre-register.",
+  };
+
+  async function checkUsername(name) {
+    const seq = ++userSeq;
+    if (!USER_RE.test(name)) { setUser(name ? "invalid" : "empty", (name ? userText.invalid : userText.empty)(name)); userChecked = name; return userState; }
+    if (!configured) { setUser("available", userText.available(name)); userChecked = name; return userState; }
+    setUser("checking", userText.checking());
+    try {
+      const email = emailInput.value.trim().toLowerCase();
+      const res = await api("/rest/v1/rpc/username_status", { p_username: name, p_email: EMAIL_RE.test(email) ? email : null });
+      const status = res.ok ? await res.json() : "error";
+      if (seq !== userSeq) return userState; // a newer check is running
+      const state = ["available", "taken", "reserved", "invalid"].includes(status) ? status : "error";
+      setUser(state, userText[state](name));
+    } catch {
+      if (seq !== userSeq) return userState;
+      setUser("error", userText.error());
+    }
+    userChecked = name;
+    return userState;
+  }
+
+  if (userInput) {
+    userInput.addEventListener("input", () => {
+      // Keep it in the app's format as they type: lowercase, no spaces or symbols.
+      const clean = userInput.value.toLowerCase().replace(/^@+/, "").replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "").slice(0, 24);
+      if (clean !== userInput.value) {
+        const caret = Math.max(0, (userInput.selectionStart || clean.length) - (userInput.value.length - clean.length));
+        userInput.value = clean;
+        userInput.setSelectionRange(caret, caret);
+      }
+      clearTimeout(userTimer);
+      if (!clean) { userSeq++; setUser("empty", userText.empty()); userChecked = ""; return; }
+      if (!USER_RE.test(clean)) { userSeq++; setUser("invalid", userText.invalid(clean)); userChecked = clean; return; }
+      setUser("checking", userText.checking());
+      userTimer = setTimeout(() => checkUsername(clean), 350);
+    });
+    // A rider re-trying their own unfinished checkout shouldn't see their name as reserved.
+    emailInput.addEventListener("change", () => { if (userInput.value) checkUsername(userInput.value); });
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = emailInput.value.trim().toLowerCase();
-    const bike = form.elements.bike.value.trim();
+    const bike = form.elements.bike ? form.elements.bike.value.trim() : "";
+    const username = userInput ? userInput.value.trim() : "";
 
     if (!EMAIL_RE.test(email)) {
       emailInput.setAttribute("aria-invalid", "true");
@@ -236,6 +307,16 @@
       return;
     }
     if (!configured) { say("Checkout isn't connected yet. Add your Supabase details to assets/js/config.js."); return; }
+    if (userInput) {
+      clearTimeout(userTimer);
+      const state = userChecked === username && userState !== "checking" ? userState : await checkUsername(username);
+      if (!["available", "error"].includes(state)) {
+        if (state === "empty") setUser("invalid", "Pick a username to reserve.");
+        userInput.focus();
+        say("");
+        return;
+      }
+    }
 
     btn.classList.add("is-busy");
     btn.disabled = true;
@@ -247,15 +328,24 @@
     if (referrer) source.referrer = referrer;
 
     try {
-      const res = await api("/functions/v1/create-checkout", { email, bike: bike || null, source });
+      const res = await api("/functions/v1/create-checkout", {
+        email, bike: bike || null, username: username || null, source, return_to: location.pathname,
+      });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.url) {
         store.set("throttle_email", email);
+        store.set("throttle_username", username);
         window.location.assign(data.url);
         return; // keep the spinner while Stripe loads
       }
       if (data.already_enrolled) {
-        say("You're already pre-registered with this email. Nothing more to pay.", true);
+        say(data.username
+          ? `You're already pre-registered as @${data.username} with this email. Nothing more to pay.`
+          : "You're already pre-registered with this email. Nothing more to pay.", true);
+      } else if (data.username_taken && userInput) {
+        setUser("taken", userText.taken(username));
+        userInput.focus();
+        say("");
       } else {
         say(data.error || "Couldn't start checkout. Please try again in a moment.");
       }
@@ -274,7 +364,10 @@
   if (params.get("enrolled")) {
     cleanUrl();
     const email = store.get("throttle_email");
-    if (email) $("#overlayText").textContent =
+    const handle = store.get("throttle_username");
+    if (email && handle) $("#overlayText").textContent =
+      `@${handle} is yours. We'll email ${email} the moment Throttle is ready. Sign in to the app with that email and your username will be waiting.`;
+    else if (email) $("#overlayText").textContent =
       `Your spot is saved. We'll email ${email} the moment Throttle is ready. Sign in to the app with that email to claim Pro.`;
     overlay.hidden = false;
     document.body.style.overflow = "hidden";

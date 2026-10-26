@@ -121,3 +121,41 @@
   .hero--route .hero__title { margin-bottom: 18px; }
   .hero__tagline { margin-bottom: 22px; font-size: clamp(42px, 12vw, 60px); line-height: 0.94; white-space: normal; }
 }
+
+/* ---------- Pre-register form: "Reserve your username" ---------- */
+.field--handle > span:first-child { margin-bottom: 6px; }
+.handle { position: relative; display: block; }
+/* styles.css styles every span in a .field as a label; undo that inside the input. */
+.field .handle, .field .handle__at, .field .handle__state { margin-bottom: 0; }
+.handle__at {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 16px; font-weight: 600; color: var(--muted); pointer-events: none;
+}
+.field--handle input { padding-left: 34px; padding-right: 44px; font-weight: 600; }
+/* Status icon on the right: spinner while checking, tick when free, cross when not. */
+.handle__state {
+  position: absolute; right: 14px; top: 50%; width: 20px; height: 20px; margin-top: -10px;
+  border-radius: 50%; display: none;
+}
+.field--handle[data-state="checking"] .handle__state {
+  display: block; border: 2px solid var(--line-2); border-top-color: var(--orange); animation: rot 0.7s linear infinite;
+}
+.field--handle[data-state="available"] .handle__state,
+.field--handle[data-state="taken"] .handle__state,
+.field--handle[data-state="reserved"] .handle__state { display: block; background: center / 12px no-repeat; }
+.field--handle[data-state="available"] .handle__state {
+  background-color: var(--green);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+}
+.field--handle[data-state="taken"] .handle__state,
+.field--handle[data-state="reserved"] .handle__state {
+  background-color: #e5484d;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E");
+}
+.field--handle[data-state="available"] input { border-color: var(--green); }
+.handle__msg { display: block; margin-top: 7px; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.field--handle[data-state="available"] .handle__msg { color: var(--green); }
+:root[data-theme="light"] .field--handle[data-state="available"] .handle__msg { color: #13784a; }
+.field--handle[data-state="invalid"] .handle__msg,
+.field--handle[data-state="taken"] .handle__msg,
+.field--handle[data-state="reserved"] .handle__msg { color: var(--err-text); }
