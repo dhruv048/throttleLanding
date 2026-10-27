@@ -209,23 +209,24 @@ webhook endpoint and its `whsec_…`).
 | `showCountFrom` | The hero shows "N founding riders already in" once N reaches this |
 | `contactEmail` | Adds a Contact link to the footer |
 
-## Admin panel (later)
+## Visit and form tracking
 
-The database is ready for it:
+`main.js` records each visitor's steps (page view, saw the form, started it,
+which fields they filled, pressed Pre-register, went to Stripe, cancelled or
+paid) in `public.site_events` through `track_event()`. It sends steps and
+field names only, never what was typed. The admin panel in `../adminPanel`
+(runs on your computer, not part of this site) shows them.
 
-- `public.admins` lists who can use the panel (`role`: `admin` or `viewer`).
-  Add someone from the SQL editor:
-  ```sql
-  insert into public.admins (user_id)
-  select id from auth.users where email = 'you@example.com';
-  ```
-- `public.is_admin()` / `is_admin('admin')` are what row-level security checks.
-  Admins can read every pre-enrollment; `admin` role can also edit rows
-  (e.g. `admin_note`).
-- `pre_enrollments.source` records `utm_*`, `ref` and the referrer, so the panel
-  can show which posts and campaigns bring riders.
+The same steps go to Google Analytics as events: `enroll_form_view`,
+`enroll_form_start`, `enroll_field_filled` (with `field`), `enroll_submit`,
+`enroll_error` (with `reason`), `begin_checkout`, `checkout_cancelled` and
+`purchase`. Mark `enroll_submit` and `purchase` as key events in GA (Admin →
+Events) to see form fills and payments in its reports.
 
-So the panel can sign in with Supabase Auth (Google, like the app) and use the
-same publishable key. It never needs the service-role key in the browser. A
-natural place for it is `throttle_landing/admin/` (served at `/admin`) or its
-own folder next to this one.
+To stop your own visits counting, open the site once on each of your devices
+with `?notrack=1` (e.g. `https://yourdomain.com/?notrack=1`); `?notrack=0`
+undoes it.
+
+Needs the migration
+`../wheelsclub/supabase/migrations/20261028000000_site_events.sql`. Until it
+runs, the page still works; the events just aren't saved.

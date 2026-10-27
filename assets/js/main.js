@@ -59,7 +59,8 @@
     sourceKeys.forEach((k) => params.get(k) && (src[k] = params.get(k).slice(0, 100)));
     store.set("throttle_source", JSON.stringify(src));
   }
-  if (!store.get("throttle_referrer") && document.referrer && !document.referrer.startsWith(location.origin)) {
+  if (!store.get("throttle_referrer") && document.referrer && !document.referrer.startsWith(location.origin)
+      && !/^https:\/\/[^/]*stripe\.com\//.test(document.referrer)) {
     store.set("throttle_referrer", document.referrer.slice(0, 300));
   }
 
@@ -201,6 +202,67 @@
       body: JSON.stringify(body || {}),
     });
 
+  /* ------------------------------------------------------------ Visit + form tracking */
+  // Counts visits and how far people get with the form, for the admin panel
+  // (public.site_events) and Google Analytics. Never sends what was typed,
+  // only which steps happened and which fields were filled.
+  const local = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode */ } },
+  };
+  const newId = () => (window.crypto && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2) + Date.now().toString(36));
+  const visitorId = local.get("throttle_vid") || newId();
+  local.set("throttle_vid", visitorId);
+  const sessionId = store.get("throttle_sid") || newId();
+  store.set("throttle_sid", sessionId);
+  const device = window.matchMedia("(pointer: coarse)").matches ? "mobile" : "desktop";
+  const priceValue = num(cfg.offerPrice) || undefined;
+  // Our event names -> Google Analytics event names (page views GA counts itself).
+  const GA_EVENT = {
+    form_view: "enroll_form_view",
+    form_start: "enroll_form_start",
+    field_filled: "enroll_field_filled",
+    form_submit: "enroll_submit",
+    form_error: "enroll_error",
+    checkout_open: "begin_checkout",
+    checkout_cancel: "checkout_cancelled",
+    checkout_success: "purchase",
+  };
+  const tracked = new Set();
+  // Open the site once with ?notrack=1 on your own devices so your visits
+  // don't count (?notrack=0 undoes it).
+  if (params.get("notrack") === "1") local.set("throttle_no_track", "1");
+  if (params.get("notrack") === "0") local.set("throttle_no_track", "0");
+  const skipTracking = local.get("throttle_no_track") === "1";
+  const logEvent = (event, detail = {}, gaParams = {}) => {
+    if (skipTracking) return Promise.resolve();
+    const key = event + JSON.stringify(detail);
+    if (event !== "page_view") {
+      if (tracked.has(key)) return Promise.resolve();
+      tracked.add(key);
+    }
+    if (GA_EVENT[event] && typeof window.gtag === "function") {
+      try { window.gtag("event", GA_EVENT[event], { ...detail, ...gaParams }); } catch { /* ignore */ }
+    }
+    if (!configured || navigator.webdriver) return Promise.resolve();
+    let source = {};
+    try { source = JSON.parse(store.get("throttle_source") || "{}"); } catch { /* ignore */ }
+    const referrer = store.get("throttle_referrer");
+    if (referrer) source.referrer = referrer;
+    return fetch(`${cfg.supabaseUrl}/rest/v1/rpc/track_event`, {
+      method: "POST",
+      keepalive: true,
+      headers: { "Content-Type": "application/json", apikey: cfg.supabasePublishableKey },
+      body: JSON.stringify({
+        p_visitor: visitorId, p_session: sessionId, p_event: event, p_page: location.pathname,
+        p_detail: detail, p_source: source, p_device: device,
+      }),
+    }).catch(() => {});
+  };
+  logEvent("page_view");
+
   // Pre-registered rider count (shown only once it's worth showing).
   if (configured) {
     api("/rest/v1/rpc/pre_enrollment_count")
@@ -224,6 +286,21 @@
   const say = (text, ok = false) => { msg.textContent = text; msg.classList.toggle("is-ok", ok); };
   emailInput.addEventListener("input", () => { emailInput.removeAttribute("aria-invalid"); if (!msg.classList.contains("is-ok")) say(""); });
 
+  // Funnel steps: saw the form, typed into it, filled each field.
+  if ("IntersectionObserver" in window) {
+    const seen = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { logEvent("form_view"); seen.disconnect(); }
+    }, { threshold: 0.4 });
+    seen.observe(form);
+  }
+  form.addEventListener("input", () => logEvent("form_start"));
+  emailInput.addEventListener("change", () => {
+    if (EMAIL_RE.test(emailInput.value.trim())) logEvent("field_filled", { field: "email" });
+  });
+  if (form.elements.bike) form.elements.bike.addEventListener("change", () => {
+    if (form.elements.bike.value.trim()) logEvent("field_filled", { field: "bike" });
+  });
+
   /* Username reservation (only on pages whose form has a username field). The
      database decides availability: username_status() checks other riders'
      profiles and paid reservations; the checkout re-checks it, and the name
@@ -244,6 +321,7 @@
     userField.dataset.state = state;
     userInput.setAttribute("aria-invalid", String(["invalid", "taken", "reserved"].includes(state)));
     userMsg.textContent = text;
+    if (state === "available") logEvent("field_filled", { field: "username" });
   };
   const userText = {
     empty: () => USER_HINT,
@@ -304,6 +382,7 @@
       emailInput.setAttribute("aria-invalid", "true");
       emailInput.focus();
       say("Enter a valid email so we can attach Pro to your account.");
+      logEvent("form_error", { reason: "invalid_email" });
       return;
     }
     if (!configured) { say("Checkout isn't connected yet. Add your Supabase details to assets/js/config.js."); return; }
@@ -314,10 +393,12 @@
         if (state === "empty") setUser("invalid", "Pick a username to reserve.");
         userInput.focus();
         say("");
+        logEvent("form_error", { reason: `username_${state}` });
         return;
       }
     }
 
+    logEvent("form_submit");
     btn.classList.add("is-busy");
     btn.disabled = true;
     say("");
@@ -335,9 +416,17 @@
       if (res.ok && data.url) {
         store.set("throttle_email", email);
         store.set("throttle_username", username);
+        // Give the event a moment to leave before the page changes.
+        await Promise.race([
+          logEvent("checkout_open", {}, { currency: "USD", value: priceValue }),
+          new Promise((r) => setTimeout(r, 500)),
+        ]);
         window.location.assign(data.url);
         return; // keep the spinner while Stripe loads
       }
+      logEvent("form_error", {
+        reason: data.already_enrolled ? "already_registered" : data.username_taken ? "username_taken" : "server_error",
+      });
       if (data.already_enrolled) {
         say(data.username
           ? `You're already pre-registered as @${data.username} with this email. Nothing more to pay.`
@@ -351,6 +440,7 @@
       }
     } catch {
       say("Network hiccup. Check your connection and try again.");
+      logEvent("form_error", { reason: "network" });
     }
     btn.classList.remove("is-busy");
     btn.disabled = false;
@@ -362,6 +452,9 @@
   const cleanUrl = () => history.replaceState(null, "", location.pathname + location.hash);
 
   if (params.get("enrolled")) {
+    logEvent("checkout_success", {}, {
+      transaction_id: params.get("enrolled").slice(0, 100), currency: "USD", value: priceValue,
+    });
     cleanUrl();
     const email = store.get("throttle_email");
     const handle = store.get("throttle_username");
@@ -374,6 +467,7 @@
     $("#overlayClose").focus();
     if (!reduceMotion) confetti($("#confetti"));
   } else if (params.get("cancelled")) {
+    logEvent("checkout_cancel");
     cleanUrl();
     showToast("Checkout cancelled. Your spot isn't locked in yet.");
   }
