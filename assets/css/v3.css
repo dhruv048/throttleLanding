@@ -1,0 +1,551 @@
+/* index v3 page: photo hero with two app cards, and Inter for every heading
+   (styles.css uses Oswald for display type). Loaded on top of styles.css and
+   v2.css, only by "index v3.html". */
+
+:root {
+  --display: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --maxw: 1360px;
+  --ink: #fbfaf4;          /* hero headline */
+  --ink-2: #b9bcc6;        /* hero subline + eyebrow */
+  --card: #17171b;
+  --card-line: rgba(255, 255, 255, 0.1);
+  --card-shadow: 0 30px 60px -24px rgba(0, 0, 0, 0.7);
+  --price-box: rgba(255, 255, 255, 0.05);
+}
+:root[data-theme="light"] {
+  --bg: #f8f9fb;
+  --nav-solid: rgba(255, 255, 255, 0.96);
+  --ink: #0e1726;
+  --ink-2: #4f5868;
+  --card: #ffffff;
+  --card-line: rgba(14, 23, 38, 0.08);
+  --card-shadow: 0 30px 60px -24px rgba(20, 30, 50, 0.35);
+  --price-box: #f1f3f6;
+}
+
+/* ---------- Inter everywhere: sentence case, heavy, tight tracking ---------- */
+.hero__title,
+.hero__tagline,
+.h2,
+.tile h3,
+.enroll h3,
+.final__title,
+.overlay__card h2 {
+  text-transform: none;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+.h2 { font-size: clamp(34px, 4.6vw, 60px); line-height: 1.04; }
+.tile h3 { font-size: clamp(21px, 2vw, 25px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+.enroll h3 { font-size: 26px; letter-spacing: -0.025em; }
+.final__title { font-size: clamp(40px, 6vw, 80px); line-height: 1.02; }
+.overlay__card h2 { font-size: 28px; letter-spacing: -0.025em; }
+.price__big { font-weight: 800; letter-spacing: -0.04em; line-height: 0.95; }
+.price__side s { font-weight: 500; letter-spacing: -0.01em; }
+.marquee__track span { font-size: 17px; font-weight: 600; letter-spacing: 0.02em; }
+.readout b, .garage em, .post__stats b, .gauge__read b { font-weight: 700; letter-spacing: -0.02em; }
+.slant { transform: skewX(-6deg); }
+
+/* ---------- Nav ---------- */
+.nav__inner { height: 80px; }
+.nav__logo img { height: 28px; }
+.nav__links { gap: 44px; font-size: 16px; font-weight: 500; color: var(--text-2); }
+.nav__links a { position: relative; padding: 28px 6px; }
+.nav__links a[aria-current="true"] { color: var(--text); font-weight: 600; }
+.nav__links a[aria-current="true"]::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+  border-radius: 2px; background: var(--orange);
+}
+.nav .theme-toggle { background: transparent; border-color: transparent; }
+.nav .theme-toggle:hover { background: var(--tint-2); }
+.nav .btn--sm { --h: 44px; padding: 0 24px; font-size: 16px; }
+
+/* ---------- Buttons: flat, like the mock ---------- */
+.btn--primary { background: #f25f14; box-shadow: 0 10px 24px -12px rgba(242, 95, 20, 0.7); }
+.btn--primary:hover { background: #e5550c; box-shadow: 0 14px 30px -12px rgba(242, 95, 20, 0.85); }
+.btn--lg { --h: 60px; padding: 0 40px; font-size: 18px; font-weight: 700; border-radius: 8px; }
+.hero3 .btn--ghost { background: var(--card); border: 1px solid var(--ink); color: var(--ink); font-weight: 600; }
+.hero3 .btn--ghost:hover { background: var(--tint-2); }
+
+/* ---------- Hero ---------- */
+.hero3 {
+  min-height: min(100vh, 900px);
+  display: flex; align-items: center;
+  padding: calc(80px + env(safe-area-inset-top) + 56px) 0 72px;
+  background: var(--bg);
+}
+.hero3__bg {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: url("../img/hero-ride.jpg");
+  background-image: image-set(url("../img/hero-ride.webp") type("image/webp"), url("../img/hero-ride.jpg") type("image/jpeg"));
+  background-size: cover; background-position: 72% center; background-repeat: no-repeat;
+}
+/* Blend the photo into the page on the left, where the copy sits. */
+.hero3__bg::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--bg) 0%, var(--bg) 28%, transparent 56%);
+}
+:root:not([data-theme="light"]) .hero3__bg::after {
+  background: linear-gradient(90deg, var(--bg) 0%, var(--bg) 30%, rgba(13, 13, 15, 0.55) 52%, rgba(13, 13, 15, 0.15) 75%);
+}
+
+.hero3__inner { grid-template-columns: minmax(0, 660px) minmax(0, 1fr); gap: 32px; }
+.hero3 .hero__title {
+  margin: 0 0 30px; color: var(--ink);
+  font-size: clamp(54px, 6.2vw, 104px); line-height: 1; letter-spacing: -0.045em; font-weight: 800;
+}
+/* "Strava for Bikers" sits above the two headline lines, in orange. */
+.hero3__kicker {
+  display: block; margin-bottom: 18px; color: #f25f14;
+  font-size: clamp(26px, 2.5vw, 40px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1;
+}
+:root:not([data-theme="light"]) .hero3__kicker { color: #ff8b45; }
+.hero3__line { display: block; white-space: nowrap; }
+.hero3__sub { margin: 0 0 36px; font-size: clamp(19px, 1.6vw, 24px); line-height: 1.5; color: var(--ink-2); }
+
+.hero3 .hero__price {
+  display: flex; justify-content: flex-start; width: 100%; max-width: 450px; gap: 10px 18px;
+  margin: 0 0 32px; padding: 18px 18px 18px 24px;
+  background: var(--price-box); border: 1px solid var(--card-line); border-radius: 12px;
+}
+.hero3 .hero__price-now {
+  font-size: 44px; font-weight: 800; letter-spacing: -0.04em;
+  background: none; color: var(--ink); -webkit-background-clip: border-box; background-clip: border-box;
+}
+.hero3 .hero__price-was s { font-family: var(--body); font-size: 20px; font-weight: 500; color: var(--muted); text-decoration-color: currentColor; text-decoration-thickness: 1.5px; }
+.hero3 .hero__price-was small { font-size: 14px; color: var(--ink-2); }
+.hero3 .hero__price-off {
+  margin-left: auto; align-self: center; min-height: 44px; padding: 0 20px; border-radius: 999px;
+  background: rgba(242, 95, 20, 0.12); border: 0; color: #e0520c; font-size: 16px; font-weight: 700; letter-spacing: 0.01em;
+}
+:root:not([data-theme="light"]) .hero3 .hero__price-off { color: #ff8b45; }
+.hero3 .hero__ctas { gap: 16px; }
+.hero3 .hero__meta { margin-top: 36px; gap: 10px 26px; font-size: 15px; color: var(--ink-2); }
+.hero3 .hero__meta svg { width: 18px; height: 18px; stroke: #f25f14; }
+
+/* ---------- Cards ---------- */
+.hero3__visual { position: relative; height: 420px; }
+.h3card {
+  position: absolute;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--card-line); border-radius: 14px;
+  box-shadow: var(--card-shadow);
+  animation: h3-in 0.9s var(--ease) both, h3-bob 7s ease-in-out 0.9s infinite;
+}
+@keyframes h3-in { from { opacity: 0; translate: 0 30px; } }
+@keyframes h3-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+
+.h3live {
+  position: absolute; left: 10px; top: 10px;
+  display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 10px; border-radius: 7px;
+  background: rgba(20, 30, 40, 0.88); color: #fff; font-size: 13px; font-weight: 600;
+}
+.h3live__dot { width: 8px; height: 8px; border-radius: 50%; background: #3ecf8e; box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.6); animation: h3-ping 2s infinite; }
+@keyframes h3-ping { 70% { box-shadow: 0 0 0 8px rgba(62, 207, 142, 0); } 100% { box-shadow: 0 0 0 0 rgba(62, 207, 142, 0); } }
+.h3stats { display: grid; grid-template-columns: repeat(3, 1fr); padding: 16px 10px 10px; }
+.h3stats > div { padding: 0 14px; }
+.h3stats > div + div { border-left: 1px solid var(--card-line); }
+.h3stats b {
+  display: block; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.h3stats i { font-style: normal; font-size: 13px; font-weight: 500; margin-left: 4px; letter-spacing: 0; }
+.h3stats small { display: block; margin-top: 4px; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+/* A real share card (1080x1350), tilted a little. */
+.h3card--mapcard { left: 2%; top: 10px; width: min(290px, 44%); overflow: hidden; border: 0; transform: rotate(-3deg); }
+.h3card--mapcard img { width: 100%; }
+.h3card--share { right: 0; top: 64px; width: min(270px, 42%); overflow: hidden; border: 0; transform: rotate(2deg); animation-delay: 0.15s, 1.4s; }
+.h3card--share img { width: 100%; }
+
+/* Wider screens: cards sit higher, like the mock (over the sky). */
+@media (min-width: 1021px) {
+  .hero3__visual { align-self: start; margin-top: 24px; }
+}
+
+/* ---------- Tablets + phones: copy on top, photo with cards below ---------- */
+@media (max-width: 1020px) {
+  .hero3 { min-height: 0; display: block; padding-top: calc(80px + env(safe-area-inset-top) + 32px); }
+  .hero3__bg { display: none; }
+  .hero3__inner { grid-template-columns: 1fr; gap: 40px; }
+  .hero3__visual {
+    height: auto; aspect-ratio: 4 / 3.3; border-radius: 18px; overflow: hidden;
+    background-image: url("../img/hero-ride.jpg");
+    background-image: image-set(url("../img/hero-ride.webp") type("image/webp"), url("../img/hero-ride.jpg") type("image/jpeg"));
+    background-size: cover; background-position: 78% center;
+  }
+  .h3card--mapcard { left: 6%; top: 7%; width: 40%; }
+  .h3card--share { right: 6%; top: auto; bottom: 7%; width: 40%; }
+}
+@media (max-width: 760px) {
+  .nav__inner { height: 68px; }
+  .nav__logo img { height: 22px; }
+  .hero3 { padding-top: calc(68px + env(safe-area-inset-top) + 28px); }
+  .hero3 .hero__title { font-size: clamp(44px, 13.4vw, 64px); margin-bottom: 20px; }
+  .hero3__kicker { font-size: clamp(24px, 7vw, 30px); margin-bottom: 12px; }
+  .hero3__sub { font-size: 18px; margin-bottom: 28px; }
+  .hero3__sub br { display: none; }
+  .hero3 .hero__price { padding: 14px 14px 14px 18px; gap: 8px 14px; }
+  .hero3 .hero__price-now { font-size: 38px; }
+  .hero3 .hero__price-off { min-height: 36px; padding: 0 14px; font-size: 14px; }
+  .btn--lg { --h: 56px; padding: 0 28px; font-size: 17px; }
+  .hero3 .hero__ctas .btn { width: 100%; }
+  .nav .btn--sm { --h: 40px; padding: 0 16px; font-size: 15px; }
+  .hero3__visual { aspect-ratio: auto; height: 560px; }
+  .h3card--mapcard { left: 5%; top: 4%; width: 56%; }
+  .h3stats b { font-size: 18px; }
+  .h3card--share { right: 5%; bottom: 4%; width: 56%; }
+}
+
+/* ================= Features: one row per feature ================= */
+:root { --feat-band: #131316; --feat-panel: #17171b; }
+:root[data-theme="light"] { --feat-band: #f2f1ed; --feat-panel: #eceef2; }
+
+.feat { padding-bottom: clamp(24px, 3vw, 40px); }
+.feat__head { margin-bottom: clamp(12px, 2vw, 24px); background: var(--feat-band); padding: clamp(48px, 6vw, 80px) 0 clamp(36px, 4vw, 52px); }
+.feat__head-inner { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px 48px; align-items: center; }
+.feat__head .h2, .feat__intro .h2 { color: #f25f14; }
+:root:not([data-theme="light"]) .feat__head .h2,
+:root:not([data-theme="light"]) .feat__intro .h2 { color: #ff8b45; }
+/* Centered heading above the rows */
+.feat__intro { padding: clamp(64px, 8vw, 96px) var(--gutter) clamp(16px, 2.5vw, 28px); text-align: center; }
+.feat__intro p { margin: 14px auto 0; max-width: 560px; font-size: 18px; line-height: 1.6; color: var(--muted); }
+.feat__lede { margin: 0; max-width: 470px; font-size: 18px; line-height: 1.6; color: var(--muted); }
+
+.frow {
+  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 32px clamp(40px, 6vw, 96px); align-items: center;
+  padding: clamp(24px, 3vw, 36px) 0; border-top: 1px solid var(--line);
+}
+.frow:first-child { border-top: 0; }
+.frow--flip { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+.frow--flip .frow__vis { order: 2; }
+.frow__num { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: var(--orange); }
+.frow__text h3 { margin: 10px 0 14px; color: var(--ink); font-size: clamp(28px, 2.9vw, 40px); font-weight: 800; letter-spacing: -0.035em; line-height: 1.1; }
+.frow__text p { margin: 0; max-width: 430px; font-size: 17px; line-height: 1.65; color: var(--muted); }
+
+/* Shared visual panel */
+.fvis { position: relative; overflow: hidden; border-radius: 18px; background: var(--feat-panel); padding: clamp(20px, 3vw, 36px); }
+.fvis--photo::before {
+  content: ""; position: absolute; inset: -20px;
+  background: url("../img/hero-ride.jpg") 70% 40% / cover;
+  background-image: image-set(url("../img/hero-ride.webp") type("image/webp"), url("../img/hero-ride.jpg") type("image/jpeg"));
+  filter: blur(8px); opacity: 0.55;
+}
+.fcard-shadow { box-shadow: 0 22px 44px -24px var(--shadow), 0 0 0 1px var(--card-line); }
+
+/* 01: live tracking */
+.ftrack { position: relative; width: min(470px, 92%); margin: 8px auto 34px; }
+.ftrack__map {
+  position: relative; height: 250px; overflow: hidden; border-radius: 14px; border: 5px solid var(--card);
+  box-shadow: 0 22px 44px -24px var(--shadow); transform: rotate(-1.5deg);
+}
+.ftrack__map picture, .ftrack__map img { width: 100%; height: 100%; }
+.ftrack__map img { object-fit: cover; object-position: 50% 12%; }
+.ftrack__stats {
+  position: absolute; right: -28px; bottom: -34px; width: 300px; padding: 14px 4px;
+  background: var(--card); color: var(--ink); border-radius: 12px; transform: rotate(-2.5deg);
+  box-shadow: 0 22px 44px -20px var(--shadow), 0 0 0 1px var(--card-line);
+}
+.ftrack__stats > div { padding: 0 12px; }
+.ftrack__stats b { font-size: 19px; }
+
+/* 02: ride cards */
+.fcards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+.fcards picture {
+  overflow: hidden; border-radius: 12px;
+  box-shadow: 0 24px 44px -24px var(--shadow), 0 0 0 1px var(--card-line);
+  transition: transform 0.4s var(--ease);
+}
+.fcards picture:hover { transform: translateY(-6px); }
+.fcards img { width: 100%; }
+
+/* 03: garage, styled like the app's garage screen */
+.fgarage { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.gbike {
+  overflow: hidden; padding: 8px; border-radius: 20px; background: var(--card); color: var(--ink);
+  box-shadow: 0 22px 44px -24px var(--shadow), 0 0 0 1px var(--card-line);
+}
+.gbike__photo { position: relative; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 14px; background: var(--tint-2); }
+.gbike__photo picture, .gbike__photo img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.gbike__photo img { object-fit: cover; }
+.gbike__tag {
+  position: absolute; left: 10px; top: 10px; padding: 5px 13px; border-radius: 999px;
+  background: #e36b24; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.gbike__edit {
+  position: absolute; right: 10px; top: 10px; width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center; background: rgba(255, 255, 255, 0.92); color: #15161a;
+}
+.gbike__edit svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.gbike__body { padding: 14px 10px 8px; }
+.gbike__body b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.2; }
+.gbike__body small { display: block; margin-top: 2px; font-size: 14px; color: var(--muted); }
+/* Placeholder until the second bike's photo is added */
+.gbike--empty .gbike__photo { border: 2px dashed var(--line-3); background: var(--tint); }
+.gbike__ph {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  color: var(--dim); font-size: 13px; font-weight: 500;
+}
+.gbike__ph svg { width: 44px; height: 44px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.gbike:not(.gbike--empty) .gbike__ph { display: none; }
+
+/* 04: feed */
+.ffeed { display: flex; flex-direction: column; gap: 14px; }
+.fpost {
+  display: flex; align-items: center; gap: 14px; width: min(100%, 460px); padding: 16px 18px;
+  background: var(--card); color: var(--ink); border-radius: 14px;
+  box-shadow: 0 22px 44px -26px var(--shadow), 0 0 0 1px var(--card-line);
+}
+.fpost + .fpost { margin-left: auto; }
+.fpost__av {
+  flex: none; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--a), var(--b)); color: #fff; font-size: 18px; font-weight: 800;
+}
+.fpost__main { flex: 1; min-width: 0; }
+.fpost__main > b { display: block; font-size: 15px; font-weight: 700; }
+.fpost__main small { display: block; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fpost__meta { display: flex; gap: 16px; margin-top: 6px; font-size: 13px; color: var(--text-2); }
+.fpost__meta > span { display: inline-flex; align-items: center; gap: 5px; }
+.fpost__meta b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.fpost__meta svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.fpost__follow { flex: none; padding: 8px 16px; border-radius: 8px; background: #f25f14; color: #fff; font-size: 13px; font-weight: 600; }
+
+/* 05: journal */
+.fjournal { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.fjournal__photo {
+  min-height: 250px; border-radius: 14px;
+  background: url("../img/hero-ride.jpg") 64% 42% / 230% no-repeat;
+  background-image: image-set(url("../img/hero-ride.webp") type("image/webp"), url("../img/hero-ride.jpg") type("image/jpeg"));
+  box-shadow: 0 22px 44px -24px var(--shadow);
+}
+.fjournal__card {
+  display: flex; flex-direction: column; padding: 16px; border-radius: 14px; background: var(--card); color: var(--ink);
+  box-shadow: 0 22px 44px -24px var(--shadow), 0 0 0 1px var(--card-line);
+}
+.fjournal__card > b { font-size: 15px; font-weight: 700; }
+.fjournal__card > small { font-size: 12px; color: var(--muted); }
+/* Shows only the map part of the share card (no logo, date or stats panel). */
+.fjournal__map { position: relative; aspect-ratio: 1 / 0.7; margin-top: auto; overflow: hidden; border-radius: 10px; }
+.fjournal__card > small { margin-bottom: 12px; }
+.fjournal__map img { width: 100%; height: auto; transform: translateY(-8%); }
+.fjournal__pin {
+  position: absolute; left: var(--x); top: var(--y); width: 42px; height: 42px; border-radius: 50%;
+  transform: translate(-50%, -50%); background: var(--img) center / cover;
+  border: 3px solid #fff; box-shadow: 0 0 0 2px #f25f14, 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* 06: flags */
+/* A big, bright globe cut off by the bottom edge and fading into the page. */
+.fflags {
+  position: relative; height: 400px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
+}
+:root { --earth-haze: rgba(120, 170, 255, 0.22); }
+:root[data-theme="light"] { --earth-haze: rgba(255, 255, 255, 0.95); }
+.earth {
+  position: absolute; left: 4%; top: 28px; width: 560px; aspect-ratio: 1; border-radius: 50%;
+  background: url("../img/earth-globe.jpg") center / cover no-repeat;
+  background-image: image-set(url("../img/earth-globe.webp") type("image/webp"), url("../img/earth-globe.jpg") type("image/jpeg"));
+  box-shadow: 0 0 70px 24px var(--earth-haze);
+}
+/* Map pins: orange teardrop with a white centre, tip on the place. */
+.epin { position: absolute; left: var(--x); top: var(--y); width: 0; height: 0; }
+.epin::before {
+  content: ""; position: absolute; left: -9px; bottom: 4px; width: 18px; height: 18px;
+  background: #f25f14; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  box-shadow: -1px 2px 5px rgba(0, 0, 0, 0.35), inset 0 0 0 1.5px rgba(255, 255, 255, 0.55);
+}
+.epin::after {
+  content: ""; position: absolute; left: -3.5px; bottom: 9.5px; width: 7px; height: 7px; border-radius: 50%; background: #fff;
+}
+.is-in .epin { animation: epin-in 0.5s var(--ease) both; }
+.epin:nth-of-type(3n) { animation-delay: 0.12s; }
+.epin:nth-of-type(3n + 1) { animation-delay: 0.24s; }
+@keyframes epin-in { from { opacity: 0; translate: 0 -10px; } }
+.fflags__stat {
+  position: absolute; right: 2%; top: 110px; z-index: 1; display: grid; padding: 18px 22px; border-radius: 14px;
+  background: var(--card); color: var(--ink); box-shadow: 0 22px 44px -22px var(--shadow), 0 0 0 1px var(--card-line);
+}
+.fflags__stat small { font-size: 12px; color: var(--muted); }
+.fflags__stat b { margin-bottom: 10px; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.fflags__stat b:last-child { margin-bottom: 0; }
+
+/* ================= Sections after the features: tighter ================= */
+#cards.section, #enroll.section, #faq.section { padding: clamp(40px, 5vw, 72px) 0; }
+#cards .section__head { margin-bottom: clamp(24px, 3vw, 36px); }
+.final { padding: clamp(56px, 7vw, 96px) 0; }
+.final__inner { gap: 28px; }
+
+/* ================= Final call to action, with the bike ================= */
+.final3__inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 24px 48px; align-items: center; }
+.final3__copy { display: flex; flex-direction: column; align-items: flex-start; gap: 28px; }
+.final3 .final__title { text-align: left; font-size: clamp(40px, 4.6vw, 68px); }
+.final3__bike { position: relative; }
+.final3__bike picture { position: relative; z-index: 1; }
+.final3__bike img { width: 100%; max-width: 600px; margin-left: auto; filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.25)); }
+/* Warm glow behind the bike so a black bike still stands out in dark mode */
+.final3__bike::before {
+  content: ""; position: absolute; inset: 8% 4% 10%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(242, 95, 20, 0.3), transparent); filter: blur(12px);
+}
+.final3__shadow {
+  position: absolute; left: 10%; right: 6%; bottom: 0; height: 22px; z-index: 0;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.35), transparent);
+}
+/* Rolls in from the left instead of rising like the other reveals */
+.final3__bike.reveal { transform: translateX(-90px); transition-duration: 1.1s; }
+.final3__bike.reveal.is-in { transform: none; }
+.final3__streaks { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.final3__streaks i {
+  position: absolute; left: -6%; width: 42%; height: 3px; border-radius: 3px;
+  background: linear-gradient(90deg, transparent, #f25f14); opacity: 0;
+  animation: f3-streak 1.8s linear infinite;
+}
+.final3__streaks i:nth-child(1) { top: 38%; }
+.final3__streaks i:nth-child(2) { top: 54%; width: 30%; animation-delay: 0.6s; }
+.final3__streaks i:nth-child(3) { top: 70%; width: 36%; animation-delay: 1.2s; }
+@keyframes f3-streak { 0% { opacity: 0; transform: translateX(30%); } 30% { opacity: 0.8; } 100% { opacity: 0; transform: translateX(-50%); } }
+
+/* ================= FAQ: questions on a card ================= */
+.faq {
+  border-top: 0; padding: 4px clamp(20px, 3vw, 36px);
+  background: var(--card); border-radius: 20px;
+  box-shadow: 0 24px 50px -30px var(--shadow), 0 0 0 1px var(--card-line);
+}
+.faq details:last-child { border-bottom: 0; }
+.faq3__head { margin-bottom: clamp(24px, 3vw, 36px); }
+.faq3__head .h2 { margin-bottom: 12px; }
+.faq3__lede { margin: 0; max-width: 520px; font-size: 17px; line-height: 1.6; color: var(--muted); }
+/* Scene and questions side by side, same top and same height */
+.faq3 { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 24px clamp(24px, 4vw, 48px); align-items: stretch; }
+
+/* Bike-riding scene */
+:root {
+  --fv-sky-top: #141a2b; --fv-sky-bottom: #2b2433; --fv-sun: #ffb27a; --fv-cloud: rgba(255, 255, 255, 0.08);
+  --fv-mtn: #2a3346; --fv-hill: #26392d; --fv-tree: #1f3326; --fv-grass: #1d2a1e;
+  --fv-road: #2a2c32; --fv-line: #cfd3da;
+}
+:root[data-theme="light"] {
+  --fv-sky-top: #cfe6f5; --fv-sky-bottom: #fbeee2; --fv-sun: #ffd7a8; --fv-cloud: rgba(255, 255, 255, 0.85);
+  --fv-mtn: #b6c7d8; --fv-hill: #9cc28f; --fv-tree: #6e9f62; --fv-grass: #c6dbad;
+  --fv-road: #575c66; --fv-line: #ffffff;
+}
+.faqviz {
+  position: relative; overflow: hidden; min-height: 420px; border-radius: 20px;
+  border: 6px solid var(--card); background: var(--fv-sky-bottom);
+  box-shadow: 0 24px 50px -30px var(--shadow), 0 0 0 1px var(--card-line);
+}
+.faqviz__scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fv-sky-top { stop-color: var(--fv-sky-top); }
+.fv-sky-bottom { stop-color: var(--fv-sky-bottom); }
+.fv-sun { fill: var(--fv-sun); }
+.fv-cloud { fill: var(--fv-cloud); }
+.fv-mtn { fill: var(--fv-mtn); }
+.fv-hill { fill: var(--fv-hill); }
+.fv-grass { fill: var(--fv-grass); }
+.fv-tree circle { fill: var(--fv-tree); }
+.fv-tree path { stroke: #6b5440; stroke-width: 3; }
+.fv-road { fill: var(--fv-road); }
+.fv-edge { stroke: var(--fv-line); stroke-width: 2; opacity: 0.7; }
+.fv-dash { stroke: var(--fv-line); stroke-width: 3; stroke-dasharray: 22 18; animation: fv-dash 0.45s linear infinite; }
+@keyframes fv-dash { to { stroke-dashoffset: 40; } }
+.fv-post path { stroke: #e9ecef; stroke-width: 3; stroke-linecap: round; }
+.fv-post .fv-post-top { stroke: #f25f14; }
+.fv-shadow { fill: rgba(0, 0, 0, 0.28); }
+
+/* Layers move left at different speeds (each layer is two 400-wide tiles) */
+.fv-scroll { animation: fv-scroll linear infinite; }
+.fv-scroll--clouds { animation-duration: 60s; }
+.fv-scroll--far { animation-duration: 36s; }
+.fv-scroll--mid { animation-duration: 16s; }
+.fv-scroll--trees { animation-duration: 6s; }
+.fv-scroll--posts { animation-duration: 1.8s; }
+@keyframes fv-scroll { to { transform: translateX(-400px); } }
+
+.fv-speed path { stroke: var(--fv-line); stroke-width: 2; stroke-linecap: round; opacity: 0; animation: fv-streak 0.9s linear infinite; }
+@keyframes fv-streak { 0% { opacity: 0; transform: translateX(30px); } 30% { opacity: 0.7; } 100% { opacity: 0; transform: translateX(-50px); } }
+
+.fv-bob { animation: fv-bob 0.32s ease-in-out infinite alternate; }
+@keyframes fv-bob { to { transform: translateY(-1.4px); } }
+.bk-tire { fill: none; stroke: #16171b; stroke-width: 9; }
+.bk-rim { fill: none; stroke: #9aa0aa; stroke-width: 2; }
+.bk-spoke { stroke: #9aa0aa; stroke-width: 2.6; stroke-linecap: round; }
+.bk-spin { transform-box: fill-box; transform-origin: center; animation: fv-spin 0.28s linear infinite; }
+@keyframes fv-spin { to { transform: rotate(360deg); } }
+.bk-hub { fill: #d5d9df; }
+.bk-disc { fill: none; stroke: #c9ced6; stroke-width: 3; }
+.bk-dark { fill: #2b2d33; }
+.bk-stroke { fill: none; stroke: #2b2d33; stroke-linecap: round; }
+.bk-metal { fill: #8d939c; }
+.bk-pipe { fill: none; stroke: #b9bec7; stroke-width: 7; stroke-linecap: round; }
+.bk-orange { fill: #f25f14; }
+.bk-tail { fill: #d7263d; }
+.bk-seat { fill: #1b1c20; }
+.bk-fork { fill: none; stroke: #d9a32b; stroke-width: 5; stroke-linecap: round; }
+.bk-stripe { fill: #fff; opacity: 0.92; }
+.bk-screen { fill: rgba(190, 215, 235, 0.75); }
+.bk-light { fill: #22252b; }
+.bk-fender { fill: none; stroke: #f25f14; stroke-width: 5; stroke-linecap: round; }
+.rd-suit { fill: none; stroke: #24262c; stroke-linecap: round; stroke-linejoin: round; }
+.rd-stripe { fill: none; stroke: #f25f14; stroke-width: 3; stroke-linecap: round; }
+.rd-arm { fill: none; stroke: #30333a; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+.rd-boot { fill: #111214; }
+.rd-helmet { fill: #f4f5f7; }
+.rd-visor { fill: #1e2a38; }
+.rd-hstripe { fill: none; stroke: #f25f14; stroke-width: 3; stroke-linecap: round; }
+
+.faqviz .h3live { left: 14px; top: 14px; }
+.faqviz__speed {
+  position: absolute; right: 14px; top: 14px; padding: 6px 12px; border-radius: 8px;
+  background: rgba(20, 30, 40, 0.88); color: #fff; font-size: 13px; font-weight: 600;
+}
+.faqviz__speed b { font-size: 16px; font-weight: 800; color: #ff8b45; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 1020px) {
+  .feat__head-inner { grid-template-columns: 1fr; }
+  .frow, .frow--flip { grid-template-columns: minmax(0, 1fr); }
+  .frow__text { order: -1; }
+  .frow--flip .frow__vis { order: 0; }
+  .frow__text p { max-width: 560px; }
+  .frow { gap: 24px; }
+  .faq3 { grid-template-columns: minmax(0, 1fr); }
+  .final3__inner { grid-template-columns: minmax(0, 1fr); }
+  .final3__copy { align-items: center; }
+  .final3 .final__title { text-align: center; }
+  .final3__bike { max-width: 520px; margin: 0 auto; }
+  .faqviz { min-height: 0; aspect-ratio: 4 / 3; }
+}
+@media (max-width: 760px) {
+  .feat__lede { font-size: 16px; }
+  .fvis { padding: 16px; }
+  .ftrack { width: 100%; margin: 0 0 8px; }
+  .ftrack__map { height: 190px; }
+  .ftrack__stats { position: relative; right: auto; bottom: auto; width: 92%; margin: -26px 0 0 auto; }
+  .ftrack__stats b { font-size: 16px; }
+  .fcards { gap: 10px; }
+  .fgarage, .fjournal { gap: 12px; }
+  .gbike { padding: 6px; border-radius: 16px; }
+  .gbike__tag { left: 7px; top: 7px; padding: 4px 9px; font-size: 9px; }
+  .gbike__edit { right: 7px; top: 7px; width: 28px; height: 28px; }
+  .gbike__body { padding: 10px 6px 6px; }
+  .gbike__body b { font-size: 16px; }
+  .gbike__body small { font-size: 12px; }
+  .fpost { padding: 14px; gap: 12px; }
+  .fpost + .fpost { margin-left: 0; }
+  .fpost__av { width: 42px; height: 42px; }
+  .fjournal__photo { min-height: 200px; }
+  .fjournal__pin { width: 34px; height: 34px; }
+  .fflags { height: 360px; }
+  .earth { left: 50%; top: 20px; width: 380px; margin-left: -190px; }
+  .epin::before { left: -7px; bottom: 3px; width: 14px; height: 14px; }
+  .epin::after { left: -2.5px; bottom: 7.5px; width: 5px; height: 5px; }
+  .fflags__stat { right: 0; top: auto; bottom: 70px; padding: 14px 18px; }
+  .fflags__stat b { font-size: 19px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fv-scroll, .fv-dash, .fv-speed path, .fv-bob, .bk-spin, .is-in .epin, .final3__streaks i { animation: none; }
+  .fv-speed path { opacity: 0.5; }
+  .h3card, .h3live__dot { animation: none; }
+}

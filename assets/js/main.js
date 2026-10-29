@@ -86,6 +86,22 @@
     new IntersectionObserver(([e]) => { enrollVisible = e.isIntersecting; syncSticky(); }, { threshold: 0.15 }).observe(enrollSection);
   }
 
+  // Mark the nav link for the section in view (aria-current).
+  const navLinks = $$(".nav__links a[href^='#']");
+  const spy = () => {
+    const line = window.scrollY + 140; // just below the nav
+    let current = navLinks[0];
+    navLinks.forEach((a) => {
+      const sec = document.getElementById(a.getAttribute("href").slice(1));
+      if (sec && sec.getBoundingClientRect().top + window.scrollY <= line) current = a;
+    });
+    navLinks.forEach((a) => (a === current ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current")));
+  };
+  if (navLinks.length) { spy(); window.addEventListener("scroll", spy, { passive: true }); }
+
+  // SVG (SMIL) animations, like the FAQ route, stay still with reduced motion.
+  if (reduceMotion) $$("svg").forEach((svg) => svg.pauseAnimations && svg.pauseAnimations());
+
   // Every CTA lands on the form with the email field ready.
   $$("[data-cta]").forEach((a) =>
     a.addEventListener("click", () => setTimeout(() => $("#email").focus({ preventScroll: true }), reduceMotion ? 0 : 650))
@@ -110,7 +126,7 @@
 
   /* ------------------------------------------------------------ Hero: cards, gauge, clock */
   const fan = $(".fan");
-  if (!reduceMotion) {
+  if (fan && !reduceMotion) {
     fan.classList.add("is-loading");
     requestAnimationFrame(() => requestAnimationFrame(() => fan.classList.remove("is-loading")));
   }
@@ -130,7 +146,7 @@
     };
     requestAnimationFrame(step);
   };
-  setTimeout(() => {
+  if (speedEl && gaugeFill) setTimeout(() => {
     gaugeFill.style.strokeDashoffset = String(100 - (TOP_SPEED / GAUGE_MAX) * 100);
     countUp(speedEl, TOP_SPEED, 1600);
   }, reduceMotion ? 0 : 500);
@@ -138,14 +154,14 @@
   const clock = $("[data-clock]");
   let secs = 13 * 60 + 42;
   const pad = (n) => String(n).padStart(2, "0");
-  setInterval(() => {
+  if (clock) setInterval(() => {
     secs += 1;
     clock.textContent = `${pad(Math.floor(secs / 3600))}:${pad(Math.floor(secs / 60) % 60)}:${pad(secs % 60)}`;
   }, 1000);
 
   const kudosEl = $("[data-kudos]");
   let kudos = 47;
-  if (!reduceMotion) setInterval(() => { kudos += 1; kudosEl.textContent = kudos; }, 2600);
+  if (kudosEl && !reduceMotion) setInterval(() => { kudos += 1; kudosEl.textContent = kudos; }, 2600);
 
   /* ------------------------------------------------------------ Tracking tile: rider dot */
   // Moves a dot along the route as it draws, then keeps riding it on a loop.
