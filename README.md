@@ -8,14 +8,17 @@ build step. It uses the **same Supabase project** as the Flutter app
 
 ```
 throttle_landing/
-├── index.html                  the page
-├── .htaccess                   cPanel/Apache: HTTPS, compression, caching
-├── .vercelignore               keeps backend code out of Vercel uploads
+├── index.html                  the page (v3)
+├── vercel.json                 security headers (CSP, HSTS, no framing)
+├── .vercelignore               allowlist: only index.html, assets/, vercel.json deploy
 ├── assets/
-│   ├── css/styles.css
+│   ├── css/styles.css          the only stylesheet
 │   ├── js/config.js            public settings (Supabase URL + publishable key, prices)
 │   ├── js/main.js              animations, enroll form, post-checkout screen
+│   ├── js/theme.js             applies the saved light/dark theme before paint
+│   ├── js/analytics.js         Google Analytics setup
 │   └── img/                    logo, ride cards, icons, social preview image
+├── unused/                     old pages, concepts and images (not deployed)
 └── supabase/
     ├── config.toml             function settings (JWT check off for both)
     └── functions/
@@ -139,8 +142,14 @@ has its own endpoint and its own `whsec_` secret), and set the live
 
 ### 5. Host the page
 
-Only `index.html`, `assets/` (and `.htaccess` on cPanel) go to the web host.
-`supabase/` is backend code for Supabase, not for the host.
+Only `index.html`, `assets/` and `vercel.json` go to the web host (on cPanel,
+also `unused/.htaccess` copied to the site root). `supabase/` is backend code
+for Supabase, not for the host.
+
+The page has no inline `<script>` blocks on purpose: `vercel.json` sends a
+Content-Security-Policy that only allows scripts from this site and Google
+Tag Manager. If you add a new third-party script, font or API, add its domain
+to that policy or the browser will block it.
 
 #### Option A: Vercel
 
@@ -154,7 +163,8 @@ npx vercel          # first time: log in, "Set up and deploy?" Y, pick your acco
 npx vercel --prod   # publish to your production URL
 ```
 
-`.vercelignore` keeps `supabase/` and this README out of the upload.
+`.vercelignore` is an allowlist, so `supabase/`, `unused/` and this README
+never get uploaded.
 
 **From GitHub** (auto-deploys on every push): push this folder to a GitHub
 repo, then on vercel.com → **Add New → Project** → import the repo →
@@ -169,6 +179,7 @@ follow the DNS records Vercel shows.
 1. Make a zip of the site files (from inside this folder):
    ```bash
    cd throttle_landing
+   cp unused/.htaccess .htaccess
    zip -r throttle_site.zip index.html assets .htaccess
    ```
 2. cPanel → **SSL/TLS Status** → run **AutoSSL** for the domain, so it has

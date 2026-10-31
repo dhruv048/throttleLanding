@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Supabase CLI local state (project link, pooler URL)
+supabase/.temp/
+supabase/.branches/
+
+# Secrets: never commit these
+.env
+.env.*
+*.pem
+*.key
+
+# Vercel CLI
+.vercel/
+
+# Dependencies
+node_modules/
+*.zip

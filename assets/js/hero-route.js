@@ -1,4 +1,4 @@
-/* indexv2 hero: a live ride. A rider dot rides the route on a loop, drawing
+/* Hero: a live ride on a faint street map. A rider dot rides the route on a loop, drawing
    the line behind it, with a tag beside it showing distance and speed.
 
    The ride is the one on the hero card: 24.3 km in 13 min (avg 112 km/h),
@@ -6,13 +6,13 @@
    when the tag hits 194, and the "Top speed" gauge and "Recording" clock on
    the cards play the same ride.
 
-   Desktop (.hr-desk): the route is drawn around the real headline and cards,
-   measured on load and on resize. Phones (.hr-mob): a fixed route in its own
-   viewBox that wraps around the cards. Whichever is showing animates. */
+   Desktop (.hr-desk): the route is drawn around the real headline and the
+   three share cards, measured on load and on resize. Phones show the map
+   only (no .hr-mob route on this page). */
 (() => {
   "use strict";
 
-  const hero = document.querySelector(".hero--route");
+  const hero = document.querySelector(".hero3");
   if (!hero) return;
 
   /* ---------- The ride ---------- */
@@ -123,7 +123,7 @@
 
   function layoutDesk() {
     if (!desk || phone.matches) return;
-    const box = hero.querySelector(".hero__bg").getBoundingClientRect();
+    const box = hero.querySelector(".hero3__bg").getBoundingClientRect();
     if (!box.width) return;
     const rel = (r) => ({ l: r.left - box.left, t: r.top - box.top, r: r.right - box.left, b: r.bottom - box.top });
     const union = (els) => els.map((el) => el.getBoundingClientRect()).reduce((u, r) => ({
@@ -134,7 +134,7 @@
     const navBottom = nav ? nav.getBoundingClientRect().bottom - box.top : 68;
     const copy = rel(hero.querySelector(".hero__copy").getBoundingClientRect());
     const meta = rel((hero.querySelector(".hero__meta") || hero.querySelector(".hero__ctas")).getBoundingClientRect());
-    const cards = rel(union([...hero.querySelectorAll(".fan__card, .fan .float")]));
+    const cards = rel(union([...hero.querySelectorAll(".h3card")]));
     const W = box.width, H = box.height;
     const cw = cards.r - cards.l, ch = cards.b - cards.t;
 
@@ -200,8 +200,7 @@
     v.obstacles = [
       ...rectsOf(".nav", 12),
       ...rectsOf(".hero__copy h1, .hero__copy h2, .hero__price, .hero__ctas, .hero__meta", 12),
-      ...rectsOf(".fan .float", 3),
-      ...rectsOf(".fan__card", 1),
+      ...rectsOf(".h3card", 1),
     ];
   }
 
@@ -267,6 +266,7 @@
   relayout();
   if (document.fonts) document.fonts.ready.then(relayout);
   window.addEventListener("load", relayout);
+  setTimeout(relayout, 1200); // after the cards' entrance animation settles
   phone.addEventListener("change", relayout);
   if ("ResizeObserver" in window) new ResizeObserver(relayout).observe(hero);
   else window.addEventListener("resize", relayout);

@@ -99,9 +99,6 @@
   };
   if (navLinks.length) { spy(); window.addEventListener("scroll", spy, { passive: true }); }
 
-  // SVG (SMIL) animations, like the FAQ route, stay still with reduced motion.
-  if (reduceMotion) $$("svg").forEach((svg) => svg.pauseAnimations && svg.pauseAnimations());
-
   // Every CTA lands on the form with the email field ready.
   $$("[data-cta]").forEach((a) =>
     a.addEventListener("click", () => setTimeout(() => $("#email").focus({ preventScroll: true }), reduceMotion ? 0 : 650))
@@ -115,7 +112,6 @@
         if (!e.isIntersecting) return;
         e.target.classList.add("is-in");
         io.unobserve(e.target);
-        if (e.target.classList.contains("tile--track")) startTrackDot();
       }),
       { threshold: 0.18, rootMargin: "0px 0px -6% 0px" }
     );
@@ -124,17 +120,7 @@
     revealEls.forEach((el) => el.classList.add("is-in"));
   }
 
-  /* ------------------------------------------------------------ Hero: cards, gauge, clock */
-  const fan = $(".fan");
-  if (fan && !reduceMotion) {
-    fan.classList.add("is-loading");
-    requestAnimationFrame(() => requestAnimationFrame(() => fan.classList.remove("is-loading")));
-  }
-
-  const TOP_SPEED = 194;
-  const GAUGE_MAX = 220;
-  const speedEl = $("[data-speed]");
-  const gaugeFill = $(".gauge__fill");
+  /* ------------------------------------------------------------ Count-up + kudos */
   const countUp = (el, to, ms, done) => {
     if (reduceMotion) { el.textContent = to; done && done(); return; }
     const t0 = performance.now();
@@ -146,55 +132,11 @@
     };
     requestAnimationFrame(step);
   };
-  if (speedEl && gaugeFill) setTimeout(() => {
-    gaugeFill.style.strokeDashoffset = String(100 - (TOP_SPEED / GAUGE_MAX) * 100);
-    countUp(speedEl, TOP_SPEED, 1600);
-  }, reduceMotion ? 0 : 500);
 
-  const clock = $("[data-clock]");
-  let secs = 13 * 60 + 42;
-  const pad = (n) => String(n).padStart(2, "0");
-  if (clock) setInterval(() => {
-    secs += 1;
-    clock.textContent = `${pad(Math.floor(secs / 3600))}:${pad(Math.floor(secs / 60) % 60)}:${pad(secs % 60)}`;
-  }, 1000);
-
+  // The feed preview's kudos count ticks up.
   const kudosEl = $("[data-kudos]");
   let kudos = 47;
   if (kudosEl && !reduceMotion) setInterval(() => { kudos += 1; kudosEl.textContent = kudos; }, 2600);
-
-  /* ------------------------------------------------------------ Tracking tile: rider dot */
-  // Moves a dot along the route as it draws, then keeps riding it on a loop.
-  let dotStarted = false;
-  function startTrackDot() {
-    if (dotStarted || reduceMotion) return;
-    dotStarted = true;
-    const viz = $(".trackviz");
-    const svg = $("svg", viz);
-    const path = $(".route", viz);
-    const dot = $(".trackviz__dot", viz);
-    const len = path.getTotalLength();
-    const DRAW_MS = 4500;
-    const LOOP_MS = 7000;
-    const t0 = performance.now() + 200;
-    const ease = (p) => 1 - Math.pow(1 - p, 3);
-    const place = (frac) => {
-      const pt = path.getPointAtLength(len * frac);
-      const m = svg.getScreenCTM();
-      const box = viz.getBoundingClientRect();
-      if (!m) return;
-      dot.style.transform = `translate(${pt.x * m.a + m.e - box.left}px, ${pt.y * m.d + m.f - box.top}px)`;
-    };
-    const tick = (now) => {
-      const t = now - t0;
-      if (t < 0) { requestAnimationFrame(tick); return; }
-      dot.style.opacity = "1";
-      if (t < DRAW_MS) place(ease(t / DRAW_MS));
-      else place(((t - DRAW_MS) % LOOP_MS) / LOOP_MS);
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }
 
   /* ------------------------------------------------------------ Marquee */
   const track = $("[data-marquee]");
@@ -313,14 +255,10 @@
   emailInput.addEventListener("change", () => {
     if (EMAIL_RE.test(emailInput.value.trim())) logEvent("field_filled", { field: "email" });
   });
-  if (form.elements.bike) form.elements.bike.addEventListener("change", () => {
-    if (form.elements.bike.value.trim()) logEvent("field_filled", { field: "bike" });
-  });
 
-  /* Username reservation (only on pages whose form has a username field). The
-     database decides availability: username_status() checks other riders'
-     profiles and paid reservations; the checkout re-checks it, and the name
-     becomes the rider's when the payment succeeds. */
+  /* Username reservation. The database decides availability: username_status()
+     checks other riders' profiles and paid reservations; the checkout re-checks
+     it, and the name becomes the rider's when the payment succeeds. */
   const userInput = form.elements.username || null;
   const userField = userInput ? userInput.closest(".field--handle") : null;
   const userMsg = userField ? userField.querySelector(".handle__msg") : null;
@@ -336,7 +274,7 @@
     if (!userField) return;
     userField.dataset.state = state;
     userInput.setAttribute("aria-invalid", String(["invalid", "taken", "reserved"].includes(state)));
-    userMsg.textContent = text;
+    if (userMsg) userMsg.textContent = text;
     if (state === "available") logEvent("field_filled", { field: "username" });
   };
   const userText = {
@@ -391,7 +329,6 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = emailInput.value.trim().toLowerCase();
-    const bike = form.elements.bike ? form.elements.bike.value.trim() : "";
     const username = userInput ? userInput.value.trim() : "";
 
     if (!EMAIL_RE.test(email)) {
@@ -426,7 +363,7 @@
 
     try {
       const res = await api("/functions/v1/create-checkout", {
-        email, bike: bike || null, username: username || null, source, return_to: location.pathname,
+        email, username: username || null, source, return_to: location.pathname,
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.url) {

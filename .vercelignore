@@ -1,7 +1,10 @@
-# Only the static page goes to Vercel. The edge functions deploy to Supabase.
-supabase
-README.md
-.htaccess
-*.zip
-hero-concepts.html
-route-concepts.html
+# Allowlist: only the live page and its assets go to Vercel. Everything else
+# (unused/, supabase/ edge functions, README, editor files) stays out.
+# The edge functions deploy to Supabase, not Vercel.
+/*
+!index.html
+!assets
+!vercel.json
+
+# Never ship Mac junk files, even inside assets/.
+**/.DS_Store
