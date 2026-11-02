@@ -1,6 +1,6 @@
 // Starts a pre-registration: checks the rider's @username is free, records a
 // pending row in public.pre_enrollments (start_pre_enrollment) and returns a
-// Stripe Checkout URL for the one-time $1.99 payment. Nothing is held while
+// Stripe Checkout URL for the one-time $9.99 payment. Nothing is held while
 // the rider pays: the username is reserved only when Stripe confirms the
 // payment (stripe-webhook). Called by the landing page's form.
 //
@@ -23,9 +23,9 @@ const db = createClient(
 
 const SITE_URL = (Deno.env.get("SITE_URL") ?? "").replace(/\/+$/, "");
 const PRICE_ID = Deno.env.get("STRIPE_PRICE_ID") ?? "";
-// Used only when STRIPE_PRICE_ID isn't set: $1.99 pre-registration
-// (Pro is $15.99/year after launch).
-const FALLBACK_AMOUNT_CENTS = 199;
+// Used only when STRIPE_PRICE_ID isn't set: $9.99 pre-registration
+// (Pro is $49.99/year after launch).
+const FALLBACK_AMOUNT_CENTS = 999;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 // Same rule as the app (and the profiles table): 3-24 lowercase letters, numbers, underscores.

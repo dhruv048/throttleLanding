@@ -1,7 +1,7 @@
 # Throttle landing page
 
 A single-page site where riders learn what Throttle is and pre-register for
-Pro with a one-time $1.99 Stripe payment (Pro is $15.99/year after
+Pro with a one-time $9.99 Stripe payment (Pro is $49.99/year after
 launch). Plain HTML, CSS and JS, with no
 build step. It uses the **same Supabase project** as the Flutter app
 (`../wheelsclub`).
@@ -34,9 +34,9 @@ pre-register; nobody else can take them on the site or in the app).
 
 ## How a pre-enrollment works
 
-1. The rider enters their email (and, optionally, their bike) and presses **Pre-register for $1.99**.
+1. The rider enters their email (and, optionally, their bike) and presses **Pre-register for $9.99**.
 2. `create-checkout` checks the email hasn't already paid, inserts a `pending`
-   row in `public.pre_enrollments`, and opens a Stripe Checkout for $1.99.
+   row in `public.pre_enrollments`, and opens a Stripe Checkout for $9.99.
 3. After paying, Stripe sends the rider back to `/?enrolled=<session id>`,
    where the page shows a "You're in" screen.
 4. Stripe calls `stripe-webhook`, which marks the row `paid` (or `expired`,
@@ -68,8 +68,8 @@ Run the migration in the Supabase SQL editor (or `npx supabase db push` from
 
 1. In the [Stripe dashboard](https://dashboard.stripe.com), copy your secret key
    (start with test mode: `sk_test_…`).
-2. Optional: create a product "Throttle Pro: Pre-registration" with a one-time $1.99 price
-   and copy its price id (`price_…`). Without it, the function charges $1.99 with
+2. Optional: create a product "Throttle Pro: Pre-registration" with a one-time $9.99 price
+   and copy its price id (`price_…`). Without it, the function charges $9.99 with
    an inline price.
 
 ### 3. Deploy the functions

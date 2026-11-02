@@ -8,9 +8,9 @@ window.THROTTLE_CONFIG = {
 
   // What pre-registration costs (one-time), and what Pro costs after launch. The charged amount is set in Stripe / create-checkout;
   // keep these in step with it. The struck-through price hides while empty.
-  offerPrice: "$1.99",
-  launchPrice: "$15.99/yr",
-  launchPriceText: "$15.99 a year",
+  offerPrice: "$9.99",
+  launchPrice: "$49.99/yr",
+  launchPriceText: "$49.99 a year",
 
   // The hero shows "N founding riders already in" once N reaches this.
   showCountFrom: 10,

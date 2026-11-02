@@ -22,7 +22,7 @@
     if (cfg.launchPrice) el.textContent = cfg.launchPrice;
     else el.hidden = true;
   });
-  // "88% off" badge, worked out from the two prices.
+  // "80% off" badge, worked out from the two prices.
   const num = (p) => parseFloat(String(p || "").replace(/[^0-9.]/g, ""));
   const off = Math.round((1 - num(cfg.offerPrice) / num(cfg.launchPrice)) * 100);
   $$("[data-discount]").forEach((el) => {
