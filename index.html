@@ -133,7 +133,7 @@
           </div>
           <ul class="hero__meta">
             <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>One-time payment</li>
-            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Secured by Stripe</li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Secured by Paddle</li>
             <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>iOS &amp; Android</li>
           </ul>
           <p class="hero__count" id="heroCount" hidden><b data-count>0</b> riders already pre-registered</p>
@@ -429,7 +429,7 @@
             <p class="form-msg" id="formMsg" role="status" aria-live="polite"></p>
             <p class="secure">
               <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-              Secure checkout by Stripe. We never see your card.
+              Secure checkout by Paddle. We never see your card.
             </p>
           </form>
         </div>
@@ -480,11 +480,11 @@
           </details>
           <details>
             <summary>Can I get a refund?</summary>
-            <p>Yes. Reply to your Stripe receipt and we'll refund you, no questions asked.</p>
+            <p>Yes. Email us or use the link in your Paddle receipt and we'll refund you, no questions asked.</p>
           </details>
           <details>
             <summary>Is my payment safe?</summary>
-            <p>Payment happens on Stripe's secure checkout page. Your card details go straight to Stripe and never touch our servers.</p>
+            <p>Payment happens in Paddle's secure checkout. Your card details go straight to Paddle and never touch our servers.</p>
           </details>
           </div>
         </div>
@@ -546,8 +546,9 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="assets/js/config.js?v=3"></script>
-  <script src="assets/js/main.js?v=10" defer></script>
+  <script src="assets/js/config.js?v=4"></script>
+  <script src="https://cdn.paddle.com/paddle/v2/paddle.js" defer></script>
+  <script src="assets/js/main.js?v=11" defer></script>
   <!-- <script src="assets/js/hero-route.js?v=15" defer></script> -->
 </body>
 </html>

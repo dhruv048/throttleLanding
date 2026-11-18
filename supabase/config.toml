@@ -11,3 +11,11 @@ verify_jwt = false
 # Stripe signs its requests instead of sending a Supabase token.
 [functions.stripe-webhook]
 verify_jwt = false
+
+# Paddle checkout (current). Same reasons as above: the page calls it with the
+# publishable key, and Paddle signs webhooks instead of sending a token.
+[functions.paddle-checkout]
+verify_jwt = false
+
+[functions.paddle-webhook]
+verify_jwt = false

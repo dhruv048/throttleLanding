@@ -33,6 +33,20 @@
   if (contact && cfg.contactEmail) { contact.href = `mailto:${cfg.contactEmail}`; contact.hidden = false; }
   $$("[data-year]").forEach((el) => (el.textContent = new Date().getFullYear()));
 
+  /* ------------------------------------------------------------ Paddle */
+  // Sandbox client tokens start with "test_", live ones with "live_".
+  let paddleReady = false;
+  let onPaddleEvent = () => {};
+  if (window.Paddle && cfg.paddleClientToken) {
+    try {
+      if (cfg.paddleClientToken.startsWith("test_")) window.Paddle.Environment.set("sandbox");
+      window.Paddle.Initialize({ token: cfg.paddleClientToken, eventCallback: (e) => onPaddleEvent(e) });
+      paddleReady = true;
+    } catch (err) {
+      console.error("Paddle didn't start", err);
+    }
+  }
+
   /* ------------------------------------------------------------ Light / dark */
   const root = document.documentElement;
   const themeBtn = $("#themeToggle");
@@ -60,7 +74,7 @@
     store.set("throttle_source", JSON.stringify(src));
   }
   if (!store.get("throttle_referrer") && document.referrer && !document.referrer.startsWith(location.origin)
-      && !/^https:\/\/[^/]*stripe\.com\//.test(document.referrer)) {
+      && !/^https:\/\/[^/]*(stripe|paddle)\.com\//.test(document.referrer)) {
     store.set("throttle_referrer", document.referrer.slice(0, 300));
   }
 
@@ -338,7 +352,12 @@
       logEvent("form_error", { reason: "invalid_email" });
       return;
     }
-    if (!configured) { say("Checkout isn't connected yet. Add your Supabase details to assets/js/config.js."); return; }
+    if (!configured || !cfg.paddleClientToken) { say("Checkout isn't connected yet. Add your Supabase and Paddle details to assets/js/config.js."); return; }
+    if (!paddleReady) {
+      say("Checkout couldn't load. Turn off any ad or script blocker for this site, or try another browser.");
+      logEvent("form_error", { reason: "paddle_not_loaded" });
+      return;
+    }
     if (userInput) {
       clearTimeout(userTimer);
       const state = userChecked === username && userState !== "checking" ? userState : await checkUsername(username);
@@ -362,20 +381,18 @@
     if (referrer) source.referrer = referrer;
 
     try {
-      const res = await api("/functions/v1/create-checkout", {
-        email, username: username || null, source, return_to: location.pathname,
+      const res = await api("/functions/v1/paddle-checkout", {
+        email, username: username || null, source,
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok && data.url) {
+      if (res.ok && data.transaction_id) {
         store.set("throttle_email", email);
         store.set("throttle_username", username);
-        // Give the event a moment to leave before the page changes.
-        await Promise.race([
-          logEvent("checkout_open", {}, { currency: "USD", value: priceValue }),
-          new Promise((r) => setTimeout(r, 500)),
-        ]);
-        window.location.assign(data.url);
-        return; // keep the spinner while Stripe loads
+        logEvent("checkout_open", {}, { currency: "USD", value: priceValue });
+        openCheckout(data.transaction_id, email);
+        btn.classList.remove("is-busy");
+        btn.disabled = false;
+        return;
       }
       logEvent("form_error", {
         reason: data.already_enrolled ? "already_registered" : data.username_taken ? "username_taken" : "server_error",
@@ -399,16 +416,41 @@
     btn.disabled = false;
   });
 
-  /* ------------------------------------------------------------ Back from Stripe */
+  /* ------------------------------------------------------------ Paddle checkout */
+  // Paddle's overlay opens on this page. On success we close it and show our
+  // own "you're in" screen; closing it before paying shows a toast.
+  function openCheckout(transactionId, email) {
+    let done = false;
+    onPaddleEvent = (e) => {
+      if (e.name === "checkout.completed") {
+        done = true;
+        logEvent("checkout_success", {}, { transaction_id: transactionId, currency: "USD", value: priceValue });
+        // Let Paddle's own confirmation show for a moment first.
+        setTimeout(() => { window.Paddle.Checkout.close(); showSuccess(); }, 1500);
+      } else if (e.name === "checkout.closed" && !done) {
+        logEvent("checkout_cancel");
+        showToast("Checkout cancelled. Your spot isn't locked in yet.");
+      }
+    };
+    window.Paddle.Checkout.open({
+      transactionId,
+      customer: { email },
+      settings: {
+        displayMode: "overlay",
+        variant: "one-page",
+        theme: root.getAttribute("data-theme") === "dark" ? "dark" : "light",
+        allowLogout: false,
+      },
+    });
+  }
+
+  /* ------------------------------------------------------------ Success screen */
   const overlay = $("#overlay");
   const toast = $("#toast");
   const cleanUrl = () => history.replaceState(null, "", location.pathname + location.hash);
 
-  if (params.get("enrolled")) {
-    logEvent("checkout_success", {}, {
-      transaction_id: params.get("enrolled").slice(0, 100), currency: "USD", value: priceValue,
-    });
-    cleanUrl();
+  function showSuccess() {
+    if (!overlay.hidden) return;
     const email = store.get("throttle_email");
     const handle = store.get("throttle_username");
     if (email && handle) $("#overlayText").textContent =
@@ -419,6 +461,15 @@
     document.body.style.overflow = "hidden";
     $("#overlayClose").focus();
     if (!reduceMotion) confetti($("#confetti"));
+  }
+
+  // Older links back from a hosted checkout (?enrolled=… / ?cancelled=1).
+  if (params.get("enrolled")) {
+    logEvent("checkout_success", {}, {
+      transaction_id: params.get("enrolled").slice(0, 100), currency: "USD", value: priceValue,
+    });
+    cleanUrl();
+    showSuccess();
   } else if (params.get("cancelled")) {
     logEvent("checkout_cancel");
     cleanUrl();

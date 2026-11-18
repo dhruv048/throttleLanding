@@ -1,10 +1,9 @@
 # Throttle landing page
 
 A single-page site where riders learn what Throttle is and pre-register for
-Pro with a one-time $9.99 Stripe payment (Pro is $49.99/year after
-launch). Plain HTML, CSS and JS, with no
-build step. It uses the **same Supabase project** as the Flutter app
-(`../wheelsclub`).
+Pro with a one-time $9.99 payment through **Paddle** (Pro is $49.99/year
+after launch). Plain HTML, CSS and JS, with no build step. It uses the
+**same Supabase project** as the Flutter app (`../wheelsclub`).
 
 ```
 throttle_landing/
@@ -13,18 +12,20 @@ throttle_landing/
 ├── .vercelignore               allowlist: only index.html, assets/, vercel.json deploy
 ├── assets/
 │   ├── css/styles.css          the only stylesheet
-│   ├── js/config.js            public settings (Supabase URL + publishable key, prices)
-│   ├── js/main.js              animations, enroll form, post-checkout screen
+│   ├── js/config.js            public settings (Supabase, Paddle client token, prices)
+│   ├── js/main.js              animations, enroll form, Paddle checkout, success screen
 │   ├── js/theme.js             applies the saved light/dark theme before paint
 │   ├── js/analytics.js         Google Analytics setup
 │   └── img/                    logo, ride cards, icons, social preview image
 ├── unused/                     old pages, concepts and images (not deployed)
 └── supabase/
-    ├── config.toml             function settings (JWT check off for both)
+    ├── config.toml             function settings (JWT check off for all)
     └── functions/
-        ├── create-checkout/    saves a pending row, returns a Stripe Checkout URL
-        ├── stripe-webhook/     marks rows paid / expired / failed / refunded
-        └── _shared/cors.ts
+        ├── paddle-checkout/    saves a pending row, creates a Paddle transaction
+        ├── paddle-webhook/     marks rows paid / refunded
+        ├── create-checkout/    Stripe version, parked (not used by the page)
+        ├── stripe-webhook/     Stripe version, parked (not used by the page)
+        └── _shared/            cors.ts, paddle.ts (API calls + signature check)
 ```
 
 The database lives with the app's other migrations:
@@ -32,17 +33,26 @@ The database lives with the app's other migrations:
 `20261027000000_reserved_usernames.sql` (usernames riders reserve when they
 pre-register; nobody else can take them on the site or in the app).
 
+The table's columns are still named `stripe_*`. With Paddle they hold Paddle
+ids: `stripe_checkout_session_id` and `stripe_payment_intent_id` hold the
+transaction id (`txn_…`), `stripe_customer_id` holds the customer id (`ctm_…`).
+
 ## How a pre-enrollment works
 
-1. The rider enters their email (and, optionally, their bike) and presses **Pre-register for $9.99**.
-2. `create-checkout` checks the email hasn't already paid, inserts a `pending`
-   row in `public.pre_enrollments`, and opens a Stripe Checkout for $9.99.
-3. After paying, Stripe sends the rider back to `/?enrolled=<session id>`,
-   where the page shows a "You're in" screen.
-4. Stripe calls `stripe-webhook`, which marks the row `paid` (or `expired`,
-   `failed`, `refunded` later).
+1. The rider enters their email and @username and presses **Pre-register for $9.99**.
+2. `paddle-checkout` checks the username is free and the email hasn't already
+   paid, inserts a `pending` row in `public.pre_enrollments`, and creates a
+   Paddle transaction for $9.99.
+3. The page opens that transaction in Paddle's checkout, as a pop-up on the
+   same page. When the payment goes through, the page shows a "You're in" screen.
+4. Paddle calls `paddle-webhook`, which marks the row `paid` and reserves the
+   username (or `refunded` later, after a full refund or a chargeback).
 5. When the rider signs in to the app with the same email, the row's `user_id`
    is filled in automatically. The app can check `is_founding_rider()`.
+
+Paddle is the merchant of record: it charges the customer, handles sales tax
+and VAT, sends the receipt, and the charge shows as `PADDLE.NET*` on bank
+statements.
 
 ## Run locally
 
@@ -51,7 +61,8 @@ python3 -m http.server 5180 --directory .
 ```
 
 Then open http://localhost:5180. The page works without the backend; the
-form just shows an error until the functions are deployed.
+form just shows an error until the functions are deployed and
+`paddleClientToken` is set.
 
 ## Set up (once)
 
@@ -64,81 +75,104 @@ Run the migration in the Supabase SQL editor (or `npx supabase db push` from
 ../wheelsclub/supabase/migrations/20261024000000_pre_enrollments.sql
 ```
 
-### 2. Stripe
+### 2. Paddle
 
-1. In the [Stripe dashboard](https://dashboard.stripe.com), copy your secret key
-   (start with test mode: `sk_test_…`).
-2. Optional: create a product "Throttle Pro: Pre-registration" with a one-time $9.99 price
-   and copy its price id (`price_…`). Without it, the function charges $9.99 with
-   an inline price.
+Paddle has two separate accounts: **sandbox** (fake money, at
+sandbox-vendors.paddle.com) and **live** (real money, at vendors.paddle.com).
+Set up sandbox first, then repeat these steps in live. Keys, products and
+webhooks don't carry over between them.
+
+1. **Default payment link.** Paddle > **Checkout > Checkout settings** > set
+   **Default payment link** to your site, e.g. `https://yourdomain.com/`.
+   Paddle refuses to create transactions until this is set.
+2. **Live only: domain approval.** Paddle > **Checkout > Website approval** >
+   add your domain. Paddle reviews it before live checkout works. They check
+   that the site shows pricing, a refund policy, terms and a privacy policy,
+   and a way to contact you.
+3. **API key (secret, server only).** Paddle > **Developer tools >
+   Authentication** > **API keys** > create one with permission to read and
+   write **Transactions**. Sandbox keys look like `pdl_sdbx_apikey_…`, live
+   ones `pdl_live_apikey_…`.
+4. **Client-side token (public, for the page).** Same page > **Client-side
+   tokens** > create one. Sandbox tokens start with `test_`, live with `live_`.
+   Put it in `assets/js/config.js` as `paddleClientToken`.
+5. **Optional: a catalog price.** Paddle > **Catalog > Products** > new
+   product "Throttle Pro: Pre-registration" with a one-time $9.99 price. Copy
+   its id (`pri_…`). Without it, `paddle-checkout` charges $9.99 with an
+   inline price.
+
+About tax: depending on your Paddle tax settings, sales tax or VAT may be
+added on top of $9.99 for some buyers. To make $9.99 the final price
+everywhere, set your prices to tax-inclusive in Paddle.
 
 ### 3. Deploy the functions
 
-From this folder:
+From this folder (put your own keys in; don't commit them):
 
 ```bash
 npx supabase login
-npx supabase link --project-ref <your-project-ref>
-npx supabase secrets set STRIPE_SECRET_KEY=sk_test_... SITE_URL=https://your-domain.com
-npx supabase functions deploy create-checkout --no-verify-jwt
-npx supabase functions deploy stripe-webhook --no-verify-jwt
+npx supabase secrets set PADDLE_API_KEY=pdl_sdbx_apikey_... --project-ref lioglcwbfrjdyrcgwfut
+npx supabase functions deploy paddle-checkout --no-verify-jwt --project-ref lioglcwbfrjdyrcgwfut
+npx supabase functions deploy paddle-webhook --no-verify-jwt --project-ref lioglcwbfrjdyrcgwfut
 ```
 
-Optional secrets: `STRIPE_PRICE_ID=price_…`, and
+Optional secrets: `PADDLE_PRICE_ID=pri_…`, `PADDLE_ENV=sandbox|live` (only if
+your API key doesn't say which; the function reads `_sdbx_` in the key), and
 `ALLOWED_ORIGINS=https://your-domain.com,http://localhost:5180` to accept form
 calls only from your site.
 
-### 4. Stripe webhook
+### 4. Paddle webhook
 
 The webhook is how the database learns a payment went through. It's the
 moment a pre-registration becomes "paid" and the rider's @username becomes
 theirs. Without it nothing is ever marked paid.
 
-**a. Pick the mode.** The webhook must be in the same Stripe mode as
-`STRIPE_SECRET_KEY`: test (`sk_test_…`) or live (`sk_live_…`). Use the
-**Test mode** toggle at the top of the Stripe dashboard; set up test first.
+**a. Create the destination.** Paddle > **Developer tools > Notifications** >
+**New destination**:
 
-**b. Create the endpoint.** Stripe dashboard → **Developers → Webhooks**
-(in newer dashboards: **Workbench → Webhooks**) → **Add endpoint** (or
-**Add destination**):
-
-- If asked where events come from, choose **Your account**.
-- Events to send (search each one and tick it):
-  - `checkout.session.completed`
-  - `checkout.session.async_payment_succeeded`
-  - `checkout.session.async_payment_failed`
-  - `checkout.session.expired`
-  - `charge.refunded`
-- If asked for a destination type, choose **Webhook endpoint**.
-- Endpoint URL: `https://<your-project-ref>.supabase.co/functions/v1/stripe-webhook`
+- Type: **Webhook**
+- URL: `https://lioglcwbfrjdyrcgwfut.supabase.co/functions/v1/paddle-webhook`
+- Events (tick each one):
+  - `transaction.paid`
+  - `transaction.completed`
+  - `adjustment.created`
+  - `adjustment.updated`
 - Description (optional): "Throttle pre-registration". Save.
 
-**c. Copy the signing secret.** Open the endpoint you just made → **Signing
-secret** → **Reveal** → copy the value starting with `whsec_`.
+**b. Copy the secret key.** Open the destination > copy its **secret key**
+(starts with `pdl_ntfset_…`).
 
-**d. Give it to the function** (from this folder):
+**c. Give it to the function:**
 
 ```bash
-npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... --project-ref <your-project-ref>
+npx supabase secrets set PADDLE_WEBHOOK_SECRET=pdl_ntfset_... --project-ref lioglcwbfrjdyrcgwfut
 ```
 
 No redeploy needed; the function reads the secret on its next request.
 
-**e. Test it.** On the site, pre-register with a real email you control and a
-new username, and pay with card `4242 4242 4242 4242`, any future expiry,
-any CVC, any postcode. Then check:
+**d. Test it (sandbox).** On the site, pre-register with a real email you
+control and a new username, and pay with Paddle's test card
+`4242 4242 4242 4242`, any future expiry, CVC `100`. Then check:
 
-- Stripe → your webhook endpoint → **Event deliveries**: `checkout.session.completed`
-  shows **200**. (400 means the signing secret doesn't match; 500 means the
-  database step failed, see the function's logs in Supabase →
-  **Edge Functions → stripe-webhook → Logs**.)
-- Supabase → **Table Editor → pre_enrollments**: your row has
+- Paddle > **Developer tools > Notifications** > your destination > **Logs**:
+  `transaction.completed` shows **200**. (400 means the secret key doesn't
+  match; 500 means the database step failed, see Supabase > **Edge Functions
+  > paddle-webhook > Logs**.)
+- Supabase > **Table Editor > pre_enrollments**: your row has
   `status = paid` and your `username`.
 - The site's username check now says that name is reserved.
 
-**f. Going live.** Switch Stripe to live mode and repeat b–d there (live mode
-has its own endpoint and its own `whsec_` secret), and set the live
-`STRIPE_SECRET_KEY` (`sk_live_…`). Test-mode and live-mode secrets can't be mixed.
+**e. Going live.** In the live Paddle account repeat steps 2 and 4 (live has
+its own API key, client token, price and webhook secret), then:
+
+1. Put the live `paddleClientToken` (`live_…`) in `config.js` and push.
+2. `npx supabase secrets set PADDLE_API_KEY=pdl_live_apikey_... PADDLE_WEBHOOK_SECRET=pdl_ntfset_... --project-ref lioglcwbfrjdyrcgwfut`
+   (and `PADDLE_PRICE_ID` if you use one; drop `PADDLE_ENV` or set it to `live`).
+3. Delete your sandbox test rows from `pre_enrollments` first. A paid
+   sandbox row still holds its username.
+
+Sandbox and live keys can't be mixed: a sandbox token with a live API key
+(or the other way round) makes checkout fail.
 
 ### 5. Host the page
 
@@ -199,31 +233,31 @@ extract, overwriting). When you change `styles.css` / `main.js`, bump their
 
 #### After either option
 
-Point Stripe back at the live address:
+Only accept form calls from your site:
 
 ```bash
-npx supabase secrets set SITE_URL=https://yourdomain.com \
-  ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+npx supabase secrets set ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com --project-ref lioglcwbfrjdyrcgwfut
 ```
 
-To take real payments, swap the test keys for live ones (`sk_live_…`, a live
-webhook endpoint and its `whsec_…`).
+Then set Paddle's **Default payment link** to the live address, and for live
+payments add the domain under **Checkout > Website approval**.
 
 ## Settings (`assets/js/config.js`)
 
 | Key | What it does |
 |-----|--------------|
 | `supabaseUrl`, `supabasePublishableKey` | Same values as the app's `lib/config/env.dart` |
-| `offerPrice` | Price shown on the page (charged amount is set in Stripe / the function) |
+| `offerPrice` | Price shown on the page (charged amount is set in Paddle / `paddle-checkout`) |
 | `launchPrice` | Shown struck through next to the offer price; hidden while empty |
 | `launchPriceText` | The after-launch price in sentences (perks, FAQ) |
 | `showCountFrom` | The hero shows "N founding riders already in" once N reaches this |
 | `contactEmail` | Adds a Contact link to the footer |
+| `paddleClientToken` | Paddle client-side token: `test_…` for sandbox, `live_…` for real payments |
 
 ## Visit and form tracking
 
 `main.js` records each visitor's steps (page view, saw the form, started it,
-which fields they filled, pressed Pre-register, went to Stripe, cancelled or
+which fields they filled, pressed Pre-register, opened checkout, cancelled or
 paid) in `public.site_events` through `track_event()`. It sends steps and
 field names only, never what was typed. The admin panel in `../adminPanel`
 (runs on your computer, not part of this site) shows them.
