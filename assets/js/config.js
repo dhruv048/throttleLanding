@@ -20,5 +20,5 @@ window.THROTTLE_CONFIG = {
   showCountFrom: 10,
 
   // Shown as a Contact link in the footer when set.
-  contactEmail: "",
+  contactEmail: "blackstellarholdings@gmail.com",
 };

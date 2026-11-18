@@ -3,6 +3,10 @@
 # The edge functions deploy to Supabase, not Vercel.
 /*
 !index.html
+!terms.html
+!privacy.html
+!refunds.html
+!pricing.html
 !assets
 !vercel.json
 

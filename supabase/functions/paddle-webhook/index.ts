@@ -14,9 +14,13 @@
 // stripe_checkout_session_id and stripe_payment_intent_id hold the
 // transaction id (txn_…), stripe_customer_id holds the customer id (ctm_…).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
-import { verifyPaddleSignature } from "../_shared/paddle.ts";
+import { clientIp, ipInCidrs, paddleWebhookCidrs, verifyPaddleSignature } from "../_shared/paddle.ts";
 
 const WEBHOOK_SECRET = Deno.env.get("PADDLE_WEBHOOK_SECRET") ?? "";
+// Deliveries are only accepted from Paddle's published IPs (sandbox or live,
+// matching the API key). Set PADDLE_IP_ALLOWLIST=off to switch this off in an
+// emergency; the signature check still runs either way.
+const IP_CHECK = (Deno.env.get("PADDLE_IP_ALLOWLIST") ?? "on").toLowerCase() !== "off";
 
 const db = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -59,21 +63,55 @@ async function markPaid(txn: any) {
   }
 }
 
-// A full refund or a chargeback cancels the pre-registration.
+// An approved full refund or a chargeback cancels the pre-registration.
+// "Full" means Paddle says type "full", or the refunded total covers what the
+// rider paid (Paddle doesn't always set type).
 // deno-lint-ignore no-explicit-any
 async function handleAdjustment(adj: any) {
-  const fullRefund = adj.action === "refund" && adj.status === "approved" && adj.type === "full";
+  const { data: row, error: findErr } = await db.from("pre_enrollments")
+    .select("id, status, amount_cents")
+    .eq("stripe_checkout_session_id", adj.transaction_id).maybeSingle();
+  if (findErr) throw findErr;
+  if (!row) {
+    console.warn(`paddle-webhook: no pre-enrollment for adjustment ${adj.id} (transaction ${adj.transaction_id})`);
+    return;
+  }
+
+  const refunded = Number.parseInt(adj.totals?.total ?? "", 10);
+  const coversPayment = Number.isFinite(refunded) && row.amount_cents != null && refunded >= row.amount_cents;
+  const fullRefund = adj.action === "refund" && adj.status === "approved" && (adj.type === "full" || coversPayment);
   const chargeback = adj.action === "chargeback";
-  if (!fullRefund && !chargeback) return;
+  if (!fullRefund && !chargeback) {
+    console.log(`paddle-webhook: adjustment ${adj.id} left alone (action=${adj.action}, status=${adj.status}, type=${adj.type}, total=${adj.totals?.total}, paid=${row.amount_cents})`);
+    return;
+  }
+
   const { error } = await db
     .from("pre_enrollments")
     .update({ status: "refunded", refunded_at: new Date().toISOString() })
-    .eq("stripe_checkout_session_id", adj.transaction_id);
+    .eq("id", row.id);
   if (error) throw error;
+  console.log(`paddle-webhook: ${row.id} marked refunded (adjustment ${adj.id})`);
 }
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+
+  if (IP_CHECK) {
+    let cidrs: string[];
+    try {
+      cidrs = await paddleWebhookCidrs();
+    } catch (err) {
+      // Can't tell who's calling: ask Paddle to retry later rather than guess.
+      console.error("paddle-webhook:", err);
+      return new Response("Try again later", { status: 503 });
+    }
+    const ip = clientIp(req);
+    if (!ip || !ipInCidrs(ip, cidrs)) {
+      console.warn(`paddle-webhook: rejected delivery from ${ip ?? "unknown IP"} (cf-connecting-ip=${req.headers.get("cf-connecting-ip")}, x-real-ip=${req.headers.get("x-real-ip")}, x-forwarded-for=${req.headers.get("x-forwarded-for")})`);
+      return new Response("Forbidden", { status: 403 });
+    }
+  }
 
   const payload = await req.text();
   const ok = await verifyPaddleSignature(payload, req.headers.get("paddle-signature"), WEBHOOK_SECRET);

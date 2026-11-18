@@ -150,6 +150,13 @@ npx supabase secrets set PADDLE_WEBHOOK_SECRET=pdl_ntfset_... --project-ref liog
 
 No redeploy needed; the function reads the secret on its next request.
 
+The webhook also only accepts deliveries from Paddle's own IP addresses. It
+reads the current list from `https://api.paddle.com/ips` (or
+`sandbox-api.paddle.com/ips` with a sandbox key) and refreshes it hourly, so
+there's nothing to keep up to date. A rejected delivery returns 403 and logs
+the caller's address. In an emergency, `PADDLE_IP_ALLOWLIST=off` turns the
+check off; the signature check still runs.
+
 **d. Test it (sandbox).** On the site, pre-register with a real email you
 control and a new username, and pay with Paddle's test card
 `4242 4242 4242 4242`, any future expiry, CVC `100`. Then check:

@@ -25,6 +25,60 @@ export async function paddleApi(
   return JSON.parse(text).data;
 }
 
+// ---------------------------------------------------------------- Webhook IPs
+// Paddle publishes the addresses it sends webhooks from at <api>/ips
+// (sandbox and live differ). We fetch the list instead of hard-coding it,
+// cache it for an hour, and keep the last good copy if a refresh fails.
+let ipCache: { at: number; cidrs: string[] } | null = null;
+
+export async function paddleWebhookCidrs(): Promise<string[]> {
+  if (ipCache && Date.now() - ipCache.at < 60 * 60 * 1000) return ipCache.cidrs;
+  try {
+    const res = await fetch(`${API_BASE}/ips`);
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    const cidrs: unknown = (await res.json())?.data?.ipv4_cidrs;
+    if (!Array.isArray(cidrs) || cidrs.length === 0) throw new Error("empty list");
+    ipCache = { at: Date.now(), cidrs: cidrs.map(String) };
+  } catch (err) {
+    if (!ipCache) throw new Error(`Couldn't load Paddle IPs from ${API_BASE}/ips: ${err}`);
+    console.warn("paddle: IP list refresh failed, using the last good copy", err);
+  }
+  return ipCache.cidrs;
+}
+
+// The caller's address as Supabase's edge sees it.
+export function clientIp(req: Request): string | null {
+  const h = req.headers;
+  return h.get("cf-connecting-ip")?.trim() ||
+    h.get("x-real-ip")?.trim() ||
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    null;
+}
+
+function ipv4ToInt(ip: string): number | null {
+  const parts = ip.split(".");
+  if (parts.length !== 4) return null;
+  let n = 0;
+  for (const p of parts) {
+    if (!/^\d{1,3}$/.test(p) || Number(p) > 255) return null;
+    n = n * 256 + Number(p);
+  }
+  return n;
+}
+
+export function ipInCidrs(ip: string, cidrs: string[]): boolean {
+  const addr = ipv4ToInt(ip.replace(/^::ffff:/, ""));
+  if (addr === null) return false;
+  return cidrs.some((cidr) => {
+    const [base, bitsStr] = cidr.split("/");
+    const baseInt = ipv4ToInt(base);
+    const bits = bitsStr === undefined ? 32 : Number(bitsStr);
+    if (baseInt === null || !(bits >= 0 && bits <= 32)) return false;
+    const size = 2 ** (32 - bits);
+    return Math.floor(addr / size) === Math.floor(baseInt / size);
+  });
+}
+
 const enc = new TextEncoder();
 
 // Checks a Paddle-Signature header ("ts=…;h1=…") against the raw body.
