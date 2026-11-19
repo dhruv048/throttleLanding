@@ -19,3 +19,11 @@ verify_jwt = false
 
 [functions.paddle-webhook]
 verify_jwt = false
+
+# Throttle Pro, called from the app with the rider's session: the gateway
+# checks the token.
+[functions.pro-checkout]
+verify_jwt = true
+
+[functions.pro-portal]
+verify_jwt = true

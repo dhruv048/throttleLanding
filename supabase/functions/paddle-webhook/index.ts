@@ -1,10 +1,19 @@
-// Paddle webhook: keeps public.pre_enrollments in step with Paddle.
+// Paddle webhook: keeps public.pre_enrollments, and Throttle Pro
+// subscriptions (pro_subscriptions, pro_grants, profiles.pro_until), in step
+// with Paddle.
 //
 // Subscribe the notification destination to:
 //   transaction.paid
 //   transaction.completed
 //   adjustment.created
 //   adjustment.updated
+//   subscription.created
+//   subscription.activated
+//   subscription.updated
+//   subscription.canceled
+//   subscription.past_due
+//   subscription.paused
+//   subscription.resumed
 //
 // Secrets: PADDLE_WEBHOOK_SECRET (the destination's secret key). Deploy with
 // --no-verify-jwt (Paddle can't send a Supabase token; its signature is
@@ -28,12 +37,39 @@ const db = createClient(
   { auth: { persistSession: false } },
 );
 
+// A Throttle Pro subscription changed: its paid period (or its end) becomes
+// the rider's Pro time. The rider is in custom_data, set by pro-checkout and
+// copied by Paddle from the first transaction onto the subscription.
+// deno-lint-ignore no-explicit-any
+async function applyProSubscription(sub: any) {
+  const userId = sub.custom_data?.user_id;
+  if (sub.custom_data?.plan !== "pro" || !userId) return;
+  // A cancellation takes effect at the period's end (Pro runs till then);
+  // an ended subscription stopped when it was cancelled.
+  const scheduledCancel = sub.scheduled_change?.action === "cancel"
+    ? sub.scheduled_change.effective_at
+    : null;
+  const cancelAt = sub.status === "canceled" ? (sub.canceled_at ?? new Date().toISOString()) : scheduledCancel;
+  const { error } = await db.rpc("apply_paddle_subscription", {
+    p_user: userId,
+    p_subscription: sub.id,
+    p_customer: sub.customer_id ?? null,
+    p_status: sub.status,
+    p_period_end: sub.current_billing_period?.ends_at ?? null,
+    p_cancel_at: cancelAt,
+  });
+  if (error) throw error;
+  console.log(`paddle-webhook: Pro ${sub.status} for ${userId} (${sub.id})`);
+}
+
 // Payment went through: mark the pre-enrollment paid and reserve its username
 // (complete_pre_enrollment). Safe to run twice: a paid row is left alone. If
 // someone else's payment for the same name landed first, the payment still
 // counts and the rider picks another name in the app.
 // deno-lint-ignore no-explicit-any
 async function markPaid(txn: any) {
+  // Pro payments are handled through their subscription's events.
+  if (txn.custom_data?.plan === "pro") return;
   let enrollmentId: string | null = txn.custom_data?.enrollment_id ?? null;
   if (!enrollmentId) {
     const { data, error } = await db.from("pre_enrollments").select("id")
@@ -138,6 +174,16 @@ Deno.serve(async (req) => {
       case "adjustment.created":
       case "adjustment.updated":
         await handleAdjustment(event.data);
+        break;
+
+      case "subscription.created":
+      case "subscription.activated":
+      case "subscription.updated":
+      case "subscription.canceled":
+      case "subscription.past_due":
+      case "subscription.paused":
+      case "subscription.resumed":
+        await applyProSubscription(event.data);
         break;
 
       default:
