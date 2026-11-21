@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-M7SRSHDRN9"></script>
+  <script src="assets/js/analytics.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Contact | Throttle</title>
+  <meta name="description" content="Get help with Throttle, ask about billing, report a bug or request account deletion." />
+  <meta name="theme-color" content="#f7f5f1" />
+  <meta property="og:title" content="Contact Throttle" />
+  <meta property="og:description" content="Help, support, billing and account deletion requests." />
+  <meta property="og:image" content="https://ridethrottlelanding.vercel.app/assets/img/og-image.jpg" />
+  <meta property="og:url" content="https://ridethrottlelanding.vercel.app/contact" />
+  <link rel="canonical" href="https://ridethrottlelanding.vercel.app/contact" />
+  <script src="assets/js/theme.js?v=2"></script>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=15" />
+</head>
+<body class="legal-page">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="nav legal-nav">
+    <div class="wrap nav__inner">
+      <a href="/" class="nav__logo" aria-label="Throttle home">
+        <img class="logo-on-dark" src="assets/img/logo-light.png" alt="Throttle" width="640" height="114" />
+        <img class="logo-on-light" src="assets/img/logo-dark.png" alt="Throttle" width="640" height="114" />
+      </a>
+      <a href="/" class="legal-back">&larr; Back to Throttle</a>
+    </div>
+  </header>
+
+  <main id="main" class="wrap legal contact">
+    <p class="legal__eyebrow">Contact</p>
+    <h1>How can we help?</h1>
+    <p class="contact__lede">Pick a topic, tell us what's going on, and we'll get back to you by email, usually within two business days.</p>
+
+    <form class="contact__form" id="contactForm" novalidate autocomplete="off">
+      <fieldset class="topics">
+        <legend>Topic</legend>
+        <div class="topics__grid">
+          <label class="topic"><input type="radio" name="topic" value="help" checked /><span><strong>Help</strong><small>Using the app, rides, garage</small></span></label>
+          <label class="topic"><input type="radio" name="topic" value="support" /><span><strong>Support</strong><small>Something isn't working for me</small></span></label>
+          <label class="topic"><input type="radio" name="topic" value="delete-account" /><span><strong>Delete account</strong><small>Remove my account and data</small></span></label>
+          <label class="topic"><input type="radio" name="topic" value="billing" /><span><strong>Billing &amp; refunds</strong><small>Pro, pre-registration, receipts</small></span></label>
+          <label class="topic"><input type="radio" name="topic" value="bug" /><span><strong>Report a bug</strong><small>Crashes, wrong data, glitches</small></span></label>
+          <label class="topic"><input type="radio" name="topic" value="feedback" /><span><strong>Feedback</strong><small>Ideas and feature requests</small></span></label>
+          <label class="topic"><input type="radio" name="topic" value="privacy" /><span><strong>Privacy</strong><small>Access or export my data</small></span></label>
+          <label class="topic"><input type="radio" name="topic" value="other" /><span><strong>Something else</strong><small>Partnerships, press, anything</small></span></label>
+        </div>
+      </fieldset>
+
+      <div class="contact__note" id="deleteNote" hidden>
+        <strong>Deleting your account</strong>
+        <p>Send this from the email address on your Throttle account so we can confirm it's you. We'll delete your account, rides and profile and reply to confirm, within 30 days. If you have an active Pro subscription, cancel it first in your Paddle receipt or at <a href="https://paddle.net" rel="noopener">paddle.net</a>.</p>
+      </div>
+
+      <div class="contact__row">
+        <label class="field"><span>Your name</span><input name="name" autocomplete="name" placeholder="Alex Rider" /></label>
+        <label class="field"><span>Account email</span><input name="email" type="email" autocomplete="email" placeholder="you@example.com" required /></label>
+      </div>
+      <label class="field" id="usernameField"><span>Throttle username <em>(optional)</em></span><input name="username" autocomplete="username" placeholder="@yourhandle" /></label>
+      <label class="field"><span>Message</span><textarea name="message" rows="6" placeholder="Tell us what's going on…" required></textarea></label>
+
+      <button class="btn btn--primary btn--lg btn--block" type="submit"><span class="btn__label">Open in my email app</span></button>
+      <p class="form-msg" id="contactMsg" role="status" aria-live="polite"></p>
+    </form>
+
+    <div class="contact__direct">
+      <p>No email app on this device? Write to us directly at <a id="contactAddr" href="mailto:blackstellarholdings@gmail.com">blackstellarholdings@gmail.com</a> and use the subject <strong id="subjectPreview">[Throttle] Help</strong>.</p>
+      <button class="btn btn--ghost btn--sm" type="button" id="copyBtn">Copy message</button>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <a href="/" aria-label="Throttle home"><img src="assets/img/logo-light.png" alt="Throttle" width="640" height="114" class="footer__logo logo-on-dark" loading="lazy" /><img src="assets/img/logo-dark.png" alt="Throttle" width="640" height="114" class="footer__logo logo-on-light" loading="lazy" /></a>
+      <p>&copy; 2026 Throttle. Made by riders, for riders.</p>
+      <nav aria-label="Footer">
+        <a href="/">Home</a>
+        <a href="terms.html">Terms</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="refunds.html">Refunds</a>
+        <a href="contact.html" aria-current="page">Contact</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/contact.js?v=1"></script>
+</body>
+</html>
